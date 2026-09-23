@@ -1,7 +1,7 @@
-/* joseli.to — webfonts. Computer Modern (as faces do LaTeX), do pacote npm
-   "computer-modern", servidas de static.joseli.to: o binário mora num lugar só
-   e nenhum projeto o versiona. Ver a seção HOSTING do readme.
-   Uma face declarada não custa download até um texto casar com ela. */
+/* joseli.to webfonts. Computer Modern (the LaTeX faces), from the
+   "computer-modern" npm package, served from static.joseli.to: the binaries
+   live in one place and no project versions them. See HOSTING in the readme.
+   A declared face costs no download until some text matches it. */
 @font-face{font-family:"CMU Serif";font-style:normal;font-weight:400;font-display:swap;src:url("https://static.joseli.to/assets/fonts/cmu-serif-500-roman.woff2") format("woff2")}
 @font-face{font-family:"CMU Serif";font-style:italic;font-weight:400;font-display:swap;src:url("https://static.joseli.to/assets/fonts/cmu-serif-500-italic.woff2") format("woff2")}
 @font-face{font-family:"CMU Serif";font-style:normal;font-weight:700;font-display:swap;src:url("https://static.joseli.to/assets/fonts/cmu-serif-700-roman.woff2") format("woff2")}

@@ -1,16 +1,16 @@
 /* Tailwind v4 entry point for down.blue. Compiled by scripts/build-css.sh into
-   assets/tailwind-<versão>.css — the only stylesheet index.html links.
+   assets/tailwind-<version>.css — the only stylesheet index.html links.
 
    scripts/ds/ is a verbatim copy of the joseli.to design system (skill
    `joseli-to-ds`): never edit it here, replace the directory. The token files
    are imported individually rather than through ds/styles.css so Tailwind's
    bundler inlines them; base.css comes last because it has to win over
    Tailwind's preflight. */
-/* source(none) desliga a detecção automática de fontes do v4. Sem isso o
-   Tailwind varre o diretório do arquivo de entrada e trata os próprios CSS
-   (os tokens vendorizados, e o CSS compilado da build anterior) como
-   conteúdo, extraindo "classes" de dentro deles. O @source abaixo passa a
-   ser a única fonte de verdade. */
+/* source(none) turns off v4's automatic source detection. Without it Tailwind
+   scans the entry file's directory and treats the CSS itself as content: the
+   vendored tokens, and the previous build's output. It then extracts "classes"
+   from inside them, which made the output grow on every build. The @source
+   below is the only source of truth. */
 @import "tailwindcss" source(none);
 
 @import "./ds/tokens/fonts.css";

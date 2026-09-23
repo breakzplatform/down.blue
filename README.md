@@ -1,111 +1,131 @@
-# down.blue — Video Downloader for Bluesky
+# down.blue: Bluesky video downloader
 
-Página única estática que baixa (e converte) vídeos publicados no Bluesky direto no navegador, sem backend. Acesse em <https://downloader.notx.blue> ou <https://down.blue>.
+A static single page that downloads and converts Bluesky videos entirely in the browser. No backend. Live at <https://downloader.notx.blue> and <https://down.blue>.
 
-Autor: [@joseli.to](https://bsky.app/profile/joseli.to) · Repositório público: <https://github.com/breakzplatform/downloader.notx.blue>
+By [@joseli.to](https://bsky.app/profile/joseli.to).
 
-## Como funciona
+## How it works
 
-1. O usuário cola a URL de um post do Bluesky (`https://bsky.app/profile/<handle>/post/<rkey>`).
-2. `extractProfileAndPost()` extrai `profile` e `post` via regex.
-3. Faz `fetch` em `https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=at://<profile>/app.bsky.feed.post/<post>&depth=10` (API pública AT Protocol, sem autenticação).
-4. `extractVideoUrl()` percorre o `embed` do post (`app.bsky.embed.video`, `record`, `record#view`, `external#view`) para achar a playlist HLS ou GIF/URL externa.
-5. Para vídeos: baixa o `master.m3u8`, escolhe a variante de maior qualidade, baixa o `.m3u8` da variante, baixa todos os segmentos `.ts` e concatena.
-6. Converte TS → MP4 com [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm) (tenta `-c copy` e cai para `libx264 + aac` se falhar).
-7. Para GIFs externos: faz `fetch` direto e expõe o blob.
-8. Mantém histórico em `localStorage` (`urlHistory`) e aceita `?url=...` para processar automaticamente.
+1. You paste a Bluesky post URL (`https://bsky.app/profile/<handle>/post/<rkey>`).
+2. `extractProfileAndPost()` pulls `profile` and `post` out of it with a regex.
+3. It fetches `https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=at://<profile>/app.bsky.feed.post/<post>&depth=10`, the public AT Protocol API, no auth.
+4. `extractVideoUrl()` walks the post's `embed` (`app.bsky.embed.video`, `record`, `record#view`, `external#view`) looking for an HLS playlist or an external GIF.
+5. For video it downloads `master.m3u8`, picks the highest-quality variant, downloads that variant's `.m3u8`, then fetches the `.ts` segments in batches of six and concatenates them.
+6. It converts TS to MP4 with [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm), trying `-c copy` first and falling back to `libx264 + aac`.
+7. For external GIFs it fetches the URL and hands back the blob.
+8. History lives in `localStorage` under `urlHistory`, and `?url=...` processes a post automatically.
 
-A conversão usa o `@ffmpeg/core` **single-thread**, que **não exige** `SharedArrayBuffer` nem os headers COOP/COEP. Os headers continuam no `_headers`/`<meta>` (inofensivos) caso um dia se troque por core multi-thread.
+Conversion uses the single-thread `@ffmpeg/core`, which does not need `SharedArrayBuffer` or the COOP/COEP headers. The headers stay in `_headers` and in a `<meta>` tag anyway, harmless, in case the multi-thread core comes back.
 
-## Estrutura
+## Layout
 
 ```
 .
-├── index.html                          # SPA inteira: HTML + Vue 3 + lógica
-├── _headers                            # COOP/COEP para Netlify / Cloudflare Pages
-├── share.png                           # OG image
-├── lib/                                # libs vendorizadas (3rd-party), versão no nome
-│   ├── vue-3.5.34.min.js               # Vue 3
-│   ├── mux-7.0.3.min.js                # mux.js (remux TS→MP4 sem WASM)
-│   ├── ffmpeg-0.12.7.min.js            # @ffmpeg/ffmpeg 0.12.7
-│   ├── 814.ffmpeg.js                   # class-worker (nome fixo exigido pelo webpack)
-│   ├── ffmpeg-core-st-0.12.6.js        # ffmpeg-core single-thread
-│   └── ffmpeg-core-st-0.12.6.wasm      # binário WebAssembly do ffmpeg
-├── assets/
-│   ├── tailwind-4.3.3.css              # CSS compilado (artefato gerado, não vendorizado)
-│                                       # (fontes vêm de static.joseli.to, não versionadas)
+├── index.html                          # the whole app: HTML, Vue 3, logic
+├── _headers                            # COOP/COEP for Netlify and Cloudflare Pages
 ├── LICENSE                             # MIT
-├── scripts/                            # nada aqui vai ao ar (podado no deploy)
-│   ├── package.json                    # pina só o Tailwind CLI (o site não usa npm)
-│   ├── pnpm-lock.yaml                  # 66 pacotes travados por integridade (pnpm)
-│   ├── build-css.sh                    # regera assets/tailwind-*.css via Tailwind CLI
-│   ├── tailwind-input.css              # entrada do build: importa o Tailwind e o tema
-│   ├── tailwind-theme.css              # ponte Tailwind v4 (só @theme, sem valores)
-│   └── ds/                             # cópia literal do design system joseli.to
+├── share.png                           # Open Graph image
+├── lib/                                # vendored third-party libs, version in the filename
+│   ├── vue-3.5.34.min.js
+│   ├── mux-7.0.3.min.js                # mux.js, remuxes TS to MP4 without wasm
+│   ├── ffmpeg-0.12.7.min.js            # @ffmpeg/ffmpeg 0.12.7
+│   ├── 814.ffmpeg.js                   # class worker, fixed name required by webpack
+│   ├── ffmpeg-core-st-0.12.6.js        # single-thread ffmpeg-core
+│   └── ffmpeg-core-st-0.12.6.wasm
+├── assets/
+│   └── tailwind-4.3.3.css              # compiled CSS, generated, not vendored
+└── scripts/                            # none of this ships; the deploy prunes it
+    ├── build-css.sh                    # regenerates assets/tailwind-*.css
+    ├── package.json                    # pins the Tailwind CLI only
+    ├── pnpm-lock.yaml                  # 66 packages locked by integrity
+    ├── tailwind-input.css              # build entry point
+    ├── tailwind-theme.css              # Tailwind v4 bridge, @theme only, no values
+    └── ds/                             # verbatim copy of the joseli.to design system
 ```
 
-## Rodando localmente
+Fonts are not versioned here. They come from `static.joseli.to`, which sends `access-control-allow-origin: *` and caches for a year.
 
-Como o core é single-thread, qualquer servidor estático serve — não precisa de COOP/COEP:
+## Running it locally
+
+The core is single-thread, so any static server works and you do not need COOP/COEP:
 
 ```sh
 npx http-server -p 8080
 ```
 
-Ou faça deploy no Netlify / Cloudflare Pages, que já leem o `_headers`.
+## Deploying
 
-## Deploy
+Netlify publishes the repo root. The build command is not a build: it deletes the files that should not reach the CDN (`scripts/`, `netlify.toml`, `.gitignore`). To keep something else off the public site, add it to that `rm -rf`.
 
-- **Netlify** (produção atual) **/ Cloudflare Pages**: o arquivo `_headers` cuida dos cabeçalhos COOP/COEP.
-- `netlify.toml` faz um *prune* no deploy: `scripts/`, o próprio `netlify.toml` e o `.gitignore` **não vão ao ar**. Para excluir mais arquivos, acrescente ao `rm -rf` do `command`.
-- **Todo o metadado npm mora em `scripts/`** de propósito: o Netlify decide se roda instalação de dependências procurando um `package.json` na raiz do site. Mantendo fora da raiz, o deploy não instala nada.
-- Sem bundler. O único passo de build é o `./scripts/build-css.sh` (rodado localmente, manual); o `netlify.toml` não compila nada, só remove arquivos.
+All the npm metadata sits under `scripts/` on purpose. Netlify decides whether to install dependencies by looking for a `package.json` at the site root, so keeping it out of the root means the deploy installs nothing.
 
-## Falhas atuais e dívida técnica
+Regenerating the stylesheet is the one manual step, needed whenever Tailwind classes change in `index.html` or the design system in `scripts/ds/` is replaced:
 
-- **Sem CI nem testes.** Nada valida uma mudança antes do deploy.
-- **Sem build/bundler.** `index.html` carrega Vue e ffmpeg via `<script>` síncrono — sem minificação do código da app, sem code-splitting, sem tree-shaking. (Tailwind já é CSS compilado estático — `assets/tailwind-4.3.3.css`; regerar com `./scripts/build-css.sh` sempre que mudar classes no `index.html` ou o design system em `scripts/ds/` for substituído.)
-- **Tudo num arquivo só.** Marcação, estilo, dados, métodos e parsers HLS misturados. Difícil revisar e impossível testar unitariamente sem extrair.
-- **A página inteira é Computer Modern, inclusive o corpo** — cinco faces, ~856 KB, servidas de `static.joseli.to` com `font-display: swap`, então não bloqueiam a primeira pintura. Um subset dos glifos realmente usados cortaria a maior parte disso, mas a otimização é do host de assets, não deste repo.
-- **Headers em dois lugares.** `<meta http-equiv>` (suporte parcial em browsers) e `_headers` (fonte de verdade, lido pelo Netlify). O `<meta>` é só fallback; o `_headers` é o que garante COOP/COEP em produção.
-- **Sem SRI** nos scripts vendorizados, e sem identificação de versão dentro deles — auditoria de supply-chain fica complicada.
-- **Validação de input frágil.** `postUrl.includes('bsky.app')` aceita qualquer URL com essa substring. Trocar por validação via `URL` + checagem de host exato.
-- **Cálculo de progresso suspeito**: `parseInt((ratio * 100).toFixed(2) / 2) + 50` mistura string e número e não cobre os 0–50% do download (só o lado do ffmpeg).
-- **Tratamento de erro genérico.** Mensagens "Please try again" sem distinguir CORS, 404, post privado, vídeo apagado, rate limit, etc.
-- **`localStorage` sem limite.** `urlHistory` cresce indefinidamente; sem cap nem rotação.
-- **Acessibilidade não revisada.** Faltam `alt` em ícones, `aria-live` no status de progresso, foco visível em botões custom.
-- **Sem `robots.txt`/`sitemap.xml`/canonical.**
-- **`og:image` aponta para domínio fixo** (`downloader.notx.blue/share.png`) — quebra previews em forks/ambientes de staging.
-- **WebCodecs detectado mas pouco aproveitado.** Há `isWebCodecsSupported()` mas o caminho rápido nativo aparenta não ser implementado completo — ou cai em ffmpeg de qualquer jeito.
-- **Download de segmentos HLS** (precisa confirmar) parece sequencial; paralelizar com `Promise.all` + concorrência limitada acelera bastante.
-- **Sem PWA.** Dado que tudo roda offline depois de carregado (ffmpeg.wasm + Vue), um Service Worker daria offline-first quase de graça.
-- **Sem rastreamento de versões nem changelog.**
+```sh
+./scripts/build-css.sh
+```
 
-## Melhorias e atualizações sugeridas
+## Known problems
 
-Em ordem aproximada de retorno-sobre-esforço:
+These are confirmed, in rough order of how much they hurt.
 
-1. **SRI ou lockfile para `lib/`.** As libs vendorizadas continuam pinadas só pelo nome do arquivo, sem registro de integridade — diferente do Tailwind, que já tem lockfile.
-2. **Migrar para Vite** + extrair `index.html` em módulos: `app.js`, `bsky.js` (API), `hls.js` (parser de playlist), `ffmpeg.js`, `history.js`. Fica testável e reduz o HTML servido. Também habilitaria o `@ffmpeg/core` **multi-thread** de forma confiável (ESM + bundler), recuperando a velocidade de conversão para vídeos longos.
+Starting a second download while one is running corrupts state. Clicking a history card mid-conversion calls `resetState()`, which revokes the blob URL the running download is still writing to, and both callers share `input.ts` and `out.mp4` inside the wasm filesystem.
 
-> Já feitos: migração do ffmpeg.wasm para 0.12.7 (API de classe `FFmpeg`, core single-thread — sem dependência de SharedArrayBuffer/COOP-COEP); Vue 3.5.34; Tailwind agora é CSS compilado estático (sem Play CDN, sem warning, ~390KB a menos de JS bloqueante); `@ffmpeg/util` substituído por `fetchFile` inline; remoção do `indexo.php` (produção é Netlify); versão no nome dos arquivos vendorizados (exceto `814.ffmpeg.js`); redesign na identidade [joseli.to](https://joseli.to) sobre Tailwind 4 (tokens do design system expostos como utilitários via `@theme`, tinta própria `#018281`, logotipo em texto, modo escuro âmbar opt-in, contraste auditado em AA nos dois temas).
-6. **Testes unitários** para `extractProfileAndPost`, `extractVideoUrl`, `parseHighestQualityVideoUrl`, `parseSegmentUrls`, `extractSubtitleLang`. São funções puras e cobrem o coração do parser.
-7. **Validação robusta de URL** com `new URL(postUrl)` + checagem `host === 'bsky.app'`.
-8. **Concorrência no download de segmentos** (ex.: pool de 6 fetches simultâneos).
-9. **Mensagens de erro específicas** por código HTTP / tipo de embed / vídeo indisponível.
-10. **i18n** (mínimo PT-BR + EN) com seleção via `navigator.language`.
-11. **Service Worker / PWA**, com cache do ffmpeg-core.wasm (~25MB) — economia gigante em recargas.
-12. **Limite e rotação no `urlHistory`** (ex.: máximo 50 entradas).
-13. **Acessibilidade**: `aria-live="polite"` no `status`, `aria-valuenow` na barra de progresso, foco em modais.
-14. **SRI** + versionamento explícito em todos os scripts vendorizados.
-15. **CI** (GitHub Actions) rodando lint + testes em cada PR; deploy via Cloudflare Pages preview.
-16. **Suporte a vídeos com múltiplas variantes de áudio** e legendas (já há detecção parcial de `EXT-X-MEDIA TYPE=SUBTITLES`).
-17. **Telemetria opcional e privada** (Plausible/Umami self-hosted) — hoje a página afirma "no analytics collected", o que é um diferencial; mantenha opt-in se for adicionar.
+A failed `ffmpeg.exec` looks like a success. The worker posts the return code instead of throwing, so the `try/catch` around the copy-codec attempt never fires and the `libx264` fallback never runs. A partial `out.mp4` gets downloaded as if it were fine.
 
-## Apoie
+A quoted video is fetched under the wrong DID. The walker closes over the outer post's author, so raw and full-quality downloads of someone else's quoted video ask the wrong PDS for the blob and get a 404. The 720p path still works because its playlist URL is absolute.
 
-- Pix · [APOIA.se/joselito](https://apoia.se/joselito) · [Buy Me a Coffee](https://buymeacoffee.com/joselito)
+A quoted video is dropped when it sits beside other media. `recordWithMedia#view` only returns when `media` is a video or an external URI, so a quote of a video post that also has images reports "quote post without video".
 
-## Aviso
+URL parsing swallows query strings. The regex is unanchored and `[^/]+` does not stop at `?` or `#`, so `...?ref=share` becomes part of the rkey and the post "does not exist". `postUrl.includes('bsky.app')` accepts any URL containing that substring, and a stored `javascript:` URL later ends up bound to an `href`.
 
-Respeite copyright e os termos de uso do Bluesky. Esta ferramenta apenas reorganiza mídia já pública; não contorna controles de acesso.
+Only `getPostThread` has a timeout. PDS resolution, blob fetches, playlists, segments and `ffmpeg.exec` all run unbounded, so one hang leaves the button disabled until reload.
+
+`localStorage` failures are swallowed. `loadHistory` parses without a `try` and runs before the ffmpeg preload, so corrupt history aborts the rest of startup. The quota path trims memory but not storage, so a reload brings the old list back.
+
+Blob URLs are only revoked on the next search, so downloading raw then 720p then GIF on one post leaks each previous blob for the life of the page.
+
+`getPostThread` asks for `depth=10` and inherits `parentHeight=80` while the handler reads only `data.thread.post`. A reply in a long thread can hit the 15-second timeout for nothing.
+
+## Other debt
+
+No CI and no tests. Nothing checks a change before it deploys.
+
+No bundler. `index.html` loads Vue and ffmpeg through synchronous `<script>` tags, so the app code is unminified and there is no code splitting.
+
+Everything is in one file. Markup, styles, data, methods and the HLS parsers are mixed together, which makes review hard and unit testing impossible without extracting first.
+
+The page is Computer Modern throughout, including body copy. Five faces, around 856 KB, served with `font-display: swap` so they do not block first paint. Subsetting would cut most of that, but it belongs to the asset host, not to this repo.
+
+Headers live in two places. `<meta http-equiv>` has partial browser support; `_headers` is what actually applies in production.
+
+No SRI on the vendored scripts, and no version marker inside them, which makes a supply-chain audit awkward.
+
+`urlHistory` grows without a cap. No `robots.txt`, `sitemap.xml` or canonical URL. `og:image` points at a fixed domain, which breaks previews on forks and staging.
+
+`isWebCodecsSupported()` exists but the native fast path looks incomplete, and everything falls back to ffmpeg anyway.
+
+## What to fix next
+
+Roughly by return on effort:
+
+1. Guard against overlapping downloads with a single `AbortController` and a monotonic operation id. This is the one that corrupts user-visible state.
+2. Check the `ffmpeg.exec` return code so the re-encode fallback actually runs.
+3. Parse the post URL with `new URL()` and require `https:` and `hostname === 'bsky.app'`, then store only the normalized URL.
+4. Add `&depth=0&parentHeight=0` to both thread fetches.
+5. Give every remaining fetch a timeout, and store the `ensureFfmpeg()` promise so a preload and a click cannot both call `load()`.
+6. Unit tests for `extractProfileAndPost`, `extractVideoUrl`, `parseHighestQualityVideoUrl`, `parseSegmentUrls` and `extractSubtitleLang`. They are pure functions covering the heart of the parser.
+7. SRI and explicit versions for everything in `lib/`.
+8. A service worker that caches `ffmpeg-core.wasm`, about 25 MB, which would pay for itself on the second visit.
+9. Cap and rotate `urlHistory`, say 50 entries.
+10. Move to Vite and split `index.html` into modules. That would also make the multi-thread `@ffmpeg/core` workable again, which matters for long videos.
+
+If telemetry is ever added, keep it opt-in. The page currently says it collects no analytics, and that claim is part of the point.
+
+## Support
+
+Pix · [APOIA.se/joselito](https://apoia.se/joselito) · [Buy Me a Coffee](https://buymeacoffee.com/joselito)
+
+## Notice
+
+Respect copyright and Bluesky's terms of service. This tool only rearranges media that is already public. It does not bypass access controls.
