@@ -17,6 +17,10 @@ By [@joseli.to](https://bsky.app/profile/joseli.to).
 
 Conversion uses the single-thread `@ffmpeg/core`, which does not need `SharedArrayBuffer` or the COOP/COEP headers. The headers stay in `_headers` and in a `<meta>` tag anyway, harmless, in case the multi-thread core comes back.
 
+## The bot
+
+Mentioning [@down.blue](https://bsky.app/profile/down.blue) in a reply to a video post answers with a download link, so you never have to open this page. The bot is a separate project: [breakzplatform/down-blue-bot](https://github.com/breakzplatform/down-blue-bot). There is also an iOS Shortcut, linked from the bot's profile.
+
 ## Layout
 
 ```
