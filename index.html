@@ -865,27 +865,41 @@
         },
 
         // ---- URL parsing ----
+        // Accepts any Atmosphere client that shares Bluesky's /profile/<actor>/post/<rkey>
+        // route (bsky.app, deer.social, blacksky.community...) and raw at:// URIs.
+        // The host is never trusted: only actor and rkey survive, always rebuilt
+        // as a bsky.app URL, so an unknown host cannot reach history or an href.
         extractProfileAndPost(postUrl) {
-          let url;
-          try {
-            url = new URL(String(postUrl ?? "").trim());
-          } catch {
-            throw new Error("Invalid URL");
+          const input = String(postUrl ?? "").trim();
+          let rawProfile;
+          let rawPost;
+          const atUri = input.match(/^at:\/\/([^/]+)\/app\.bsky\.feed\.post\/([^/?#]+)\/?$/);
+          if (atUri) {
+            [, rawProfile, rawPost] = atUri;
+          } else {
+            let url;
+            try {
+              url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(input) ? input : `https://${input}`);
+            } catch {
+              throw new Error("Invalid URL");
+            }
+            if (url.protocol !== "https:" && url.protocol !== "http:") {
+              throw new Error("Invalid URL");
+            }
+            const m = url.pathname.match(/^\/profile\/([^/]+)\/post\/([^/]+)\/?$/);
+            if (!m) throw new Error("Invalid URL format");
+            [, rawProfile, rawPost] = m;
           }
-          if (url.protocol !== "https:" || url.hostname !== "bsky.app") {
-            throw new Error("Invalid URL");
-          }
-          const m = url.pathname.match(/^\/profile\/([^/]+)\/post\/([^/]+)\/?$/);
-          if (!m) throw new Error("Invalid URL format");
           let profile;
           let post;
           try {
-            profile = decodeURIComponent(m[1]);
-            post = decodeURIComponent(m[2]);
+            profile = decodeURIComponent(rawProfile);
+            post = decodeURIComponent(rawPost);
           } catch {
             throw new Error("Invalid URL format");
           }
-          if (!profile || !post || /[\s/?#]/.test(profile) || /[\s/?#]/.test(post)) {
+          // Handle or DID, and a record key, per the AT Protocol syntax rules.
+          if (!/^[a-zA-Z0-9._:%-]{1,253}$/.test(profile) || !/^[a-zA-Z0-9._:~-]{1,512}$/.test(post)) {
             throw new Error("Invalid URL format");
           }
           return {
