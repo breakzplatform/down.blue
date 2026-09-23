@@ -1,0 +1,6 @@
+# No bundler/build: Netlify just publishes the repo root. The "command" runs
+# at deploy time only to prune files that should not be served publicly
+# (they stay in the Git repo, they just don't ship to the CDN).
+[build]
+  publish = "."
+  command = "rm -rf scripts"

@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin" />
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="credentialless" />
+  <title>Video Downloader for Bluesky</title>
+  <meta property="og:title" content="Video Downloader for Bluesky" />
+  <meta name="twitter:title" content="Video Downloader for Bluesky" />
+  <meta name="description" content="Download (and convert!) Bluesky videos with ease!" />
+  <meta property="og:description" content="Download (and convert!) Bluesky videos with ease!" />
+  <meta name="twitter:description" content="Download (and convert!) Bluesky videos with ease!" />
+  <meta property="og:image" content="https://downloader.notx.blue/share.png" />
+  <meta name="twitter:image" content="https://downloader.notx.blue/share.png" />
+  <link rel="stylesheet" href="assets/tailwind-4.3.3.css" />
+  <style>
+    /* down.blue components, built on the joseli.to design system tokens that
+       scripts/tailwind-input.css compiles into the stylesheet above. Nothing
+       here invents a value: every colour, rule, gap and font is a token. */
+
+    /* CM Sans has a smaller x-height than a system ui font, so the 15px step
+       reads smaller than it did on system-ui. The design system's rule is to
+       take the 17px step for running copy; only the size moves, the leading
+       stays where the --type-body shorthand put it. */
+    body { font-size: var(--text-title-sm); }
+
+    /* The wordmark: the name in Computer Modern, the suffix carried by the
+       project ink. The ink fills a block behind `.blue` rather than colouring
+       the letters — the same treatment every other ink surface gets, and the
+       only one that clears WCAG on both papers.
+       It runs past the top of the type scale (52px) on purpose: this is a
+       one-page tool and the masthead is the only display type it has. */
+    .db-wordmark {
+      margin: var(--space-10) 0 var(--space-6);
+      font: var(--weight-normal) clamp(var(--text-display-1), 13vw, 116px)/1.1 var(--font-display);
+      letter-spacing: var(--tracking-display);
+      color: var(--text-1);
+      text-align: center;
+    }
+    /* inline-block so the block is sized by line-height rather than by Computer
+       Modern's very tall ascent/descent, which would float it off the letters. */
+    .db-wordmark-suffix {
+      display: inline-block;
+      line-height: 0.92;
+      padding: 0.06em 0.07em 0.1em;
+      background: var(--project-ink);
+      color: var(--project-ink-contrast);
+    }
+
+    /* Meta lines, tags and labels: typewriter, uppercase, tracked out. */
+    .db-meta { font: var(--type-meta); text-transform: uppercase; letter-spacing: var(--tracking-meta); color: var(--text-3); }
+    .db-micro { font: var(--type-label); text-transform: uppercase; letter-spacing: var(--tracking-meta); }
+    /* Running machine output and fine print: typewriter, but readable. */
+    .db-note { font: var(--type-code); color: var(--text-3); }
+
+    /* One rule decides the face, everywhere: anything set in CAPS is typewriter,
+       anything read as a sentence is the reader's own UI font, and Computer
+       Modern serif is reserved for the wordmark. So every box title — panel
+       head, callout spine — is the same object, and no box invents its own. */
+    .db-panel { border: var(--border); background: var(--surface-card); box-shadow: var(--shadow-2); }
+    .db-panel-head {
+      display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+      margin: 0; padding: var(--box-head-pad); border-bottom: var(--border);
+      background: var(--project-ink); color: var(--project-ink-contrast);
+      font: var(--weight-bold) var(--text-caption)/1.4 var(--font-mono);
+      letter-spacing: var(--tracking-meta); text-transform: uppercase;
+    }
+
+    /* Buttons carry only their type and colour. The movement — lift toward the
+       light on hover, slam flat into the shadow on press — comes from the design
+       system's .neo-press, which the markup adds, so the offsets are never
+       computed here. Colour no longer changes on hover: the block moves instead.
+       Links still invert, and base.css exempts anything with a `neo` class from
+       that rule, which is why these do not need to opt out by hand. */
+    .db-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+      border: var(--border); background: var(--surface-page); color: var(--text-1);
+      box-shadow: var(--shadow-2);
+      font: var(--weight-semibold) var(--text-body-sm)/1.25 var(--font-body);
+      padding: 9px 12px; cursor: pointer; text-align: center; text-decoration: none;
+    }
+    a.db-btn, a.db-btn:visited, a.db-btn:hover { color: var(--text-1); text-decoration: none; }
+    .db-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .db-btn-primary, a.db-btn-primary, a.db-btn-primary:visited, a.db-btn-primary:hover {
+      background: var(--project-ink); border-color: var(--project-ink); color: var(--project-ink-contrast);
+    }
+    .db-btn-danger { background: var(--ink-red); border-color: var(--ink-red); color: var(--on-red); }
+    .db-btn-sm { padding: 4px 7px; font-size: var(--text-meta); box-shadow: var(--shadow-1); }
+
+    /* Picking a format is a step, not a toolbar, so it gets its own rule and
+       title. None of the three is filled: a filled button here reads as "already
+       chosen" and is exactly why the step was easy to walk past.
+       The margin above separates the step from the one before it; the padding
+       below the rule only has to clear the legend, which the browser hangs on
+       the border line. */
+    .db-choice { border: 0; margin: var(--space-7) 0 0; padding: var(--space-5) 0 0; border-top: var(--border); }
+    /* The legend sits in the gap it punches in the fieldset's top border, which
+       turns the rule into a labelled one. That is the native behaviour and the
+       right look here, so the padding makes the gap deliberate. */
+    .db-choice-title {
+      padding: 0 var(--space-5) 0 0; margin: 0;
+      font: var(--weight-bold) var(--text-caption)/1.4 var(--font-mono);
+      text-transform: uppercase; letter-spacing: var(--tracking-meta); color: var(--text-1);
+    }
+    .db-btn-mode {
+      flex-direction: column; align-items: flex-start; gap: var(--space-2);
+      padding: var(--space-5); text-align: left; width: 100%;
+    }
+    .db-mode-label { font: var(--weight-semibold) var(--text-body)/1.25 var(--font-body); }
+
+    .db-input {
+      width: 100%; border: var(--border); background: var(--surface-page); color: var(--text-1);
+      box-shadow: var(--shadow-1); font: var(--type-body); padding: 8px 10px;
+    }
+    .db-input::placeholder { color: var(--text-3); }
+
+    /* 0–50% download, 50–100% conversion. 80ms so it steps rather than glides. */
+    .db-progress { border: var(--border); height: 18px; background: var(--surface-page); }
+    .db-progress-fill { height: 100%; background: var(--project-ink); transition: width var(--motion-fast) var(--easing); }
+
+    .db-status { font: var(--type-code); color: var(--text-2); }
+    .db-status-error { color: var(--status-error); font-weight: var(--weight-bold); }
+
+    /* The spine carries a mark instead of a word here: the note is an aside, and
+       a vertical "DID YOU KNOW?" shouted as loudly as a panel title read like
+       one. The block is still the same ink block; only its content changed.
+       Body is one step down from --type-body — face follows role, size follows
+       hierarchy, and this text ranks below the tool itself. */
+    .db-callout { border: var(--border); box-shadow: var(--shadow-2); display: grid; grid-template-columns: max-content 1fr; }
+    .db-callout-spine {
+      display: grid; place-items: center; width: 34px;
+      background: var(--project-ink); color: var(--project-ink-contrast);
+    }
+    .db-callout-body { padding: var(--space-5) var(--space-6); font: var(--type-dek); color: var(--text-2); }
+
+    /* Imagery is screened like newsprint. Posts with no thumbnail get an empty
+       dot field, inked with one of the sixteen, picked from the post id.
+       The post's choice arrives as --halftone-ink (inline, from Vue) and only
+       feeds --halftone-dot on paper: in the dark theme every dot collapses to
+       amber, because that theme is monochrome and sixteen hues would wreck it.
+       The indirection is what lets a plain rule beat an inline style. */
+    .db-halftone {
+      --halftone-dot: var(--halftone-ink, var(--ink-graphite));
+      /* Paints its own paper: the tile behind it is filled with the project ink
+         for the duotone, and ink dots on ink would be invisible. */
+      background-color: var(--surface-page);
+      background-image: radial-gradient(var(--halftone-dot) var(--halftone-dot-size), transparent 0);
+      background-size: 7px 7px;
+    }
+    :root[data-theme="dark"] .db-halftone { --halftone-dot: var(--ink-amber); }
+    /* A real thumbnail is screened the way the system screens photographs:
+       grayscale, contrast pushed, multiplied onto the ink. Highlights come back
+       as the ink, shadows go to black — a two-colour duotone, amber in the dark
+       theme for free. `isolation` keeps the blend inside the tile instead of
+       letting it reach the page. Hover restores the full-colour frame, because
+       a history row still has to be recognisable. The whole card is the target,
+       not just the image: focus-within also covers reaching the row by keyboard. */
+    .db-thumb-btn { background: var(--project-ink); isolation: isolate; }
+    /* Ink on paper, not paper on ink: highlights have to come back as the paper
+       and shadows as the ink, or a mostly-white frame turns into a dark slab and
+       stops matching the empty placeholder beside it. That means the operator
+       follows the paper, same as the dot screen below. */
+    .db-thumb { filter: grayscale(1) contrast(1.35); mix-blend-mode: screen; }
+    :root[data-theme="dark"] .db-thumb { mix-blend-mode: multiply; }
+    /* Then the paper punches back through on the same 7px pitch as the empty
+       placeholder, so a screened frame and a missing one read as one family.
+       The operator has to follow the paper: white paper lightens through
+       `screen`, black paper darkens through `multiply`. Using either alone
+       would make the dots vanish in the other theme. */
+    .db-thumb-btn:has(.db-thumb)::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background-image: radial-gradient(var(--surface-page) var(--halftone-dot-size), transparent 0);
+      background-size: 7px 7px;
+      mix-blend-mode: screen;
+    }
+    :root[data-theme="dark"] .db-thumb-btn:has(.db-thumb)::after { mix-blend-mode: multiply; }
+    /* The card sits inside a panel that already casts, and two nested blocks
+       must never both cast — so it rests flat and earns its shadow only while
+       you are on it. .neo-lift supplies the travel; neo-sm keeps the hover step
+       at 5px rather than jumping to 8px, which on a tile this size reads as a
+       pop rather than a lift. The thumbnail button inside casts nothing, ever. */
+    .db-card { box-shadow: none; }
+    .db-card:hover .db-thumb, .db-card:focus-within .db-thumb {
+      filter: none; mix-blend-mode: normal;
+    }
+    .db-card:hover .db-thumb-btn::after, .db-card:focus-within .db-thumb-btn::after { opacity: 0; }
+
+    .db-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+
+    /* Third-party marks keep their own colour; the system only squares them off. */
+    .db-chip {
+      display: inline-block; border: var(--border); padding: 5px 9px;
+      font: var(--type-label); text-transform: uppercase; letter-spacing: var(--tracking-meta); text-decoration: none;
+      box-shadow: var(--shadow-1);
+    }
+    .db-chip-pix, a.db-chip-pix:visited { background: #77B6A8; color: #000; }
+    /* APOIA.se sets its mark in white, but white on their orange is 3.7:1 —
+       below AA at this size. Black on the same orange is 5.6:1. */
+    .db-chip-apoiase, a.db-chip-apoiase:visited { background: #EC4B3C; color: #000; }
+    .db-chip-coffee, a.db-chip-coffee:visited { background: #FFDD00; color: #000; }
+  </style>
+  <script>
+    // Dark mode is opt-in and manual — never prefers-color-scheme. Applied here,
+    // before first paint, so the amber theme does not flash white on load.
+    if (localStorage.getItem("theme") === "dark") document.documentElement.dataset.theme = "dark";
+  </script>
+  <script src="lib/ffmpeg-0.12.7.min.js"></script>
+  <script src="lib/mux-7.0.3.min.js"></script>
+  <script src="lib/vue-3.5.34.min.js"></script>
+  <link rel="icon"
+    href="data:image/svg+xml,&lt;svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22&gt;&lt;rect width=%22100%22 height=%22100%22 fill=%22%23018281%22/&gt;&lt;path d=%22M50 20V58M34 44l16 16 16-16M24 76h52%22 stroke=%22%23FFF%22 stroke-width=%2210%22 fill=%22none%22/&gt;&lt;/svg&gt;" />
+</head>
+
+<body>
+  <div id="app">
+    <p class="db-micro border-b border-strong px-6 py-2 text-center text-text-2">
+      {{ t.bannerPrefix }}
+      <a href="https://share.notx.blue/" target="_blank" rel="noopener">{{ t.bannerExt }}</a>{{ t.bannerSuffix }}
+    </p>
+
+    <div class="mx-auto max-w-[880px] px-6 pb-16">
+      <div class="flex flex-wrap items-center justify-end gap-2 pt-4">
+        <button @click="toggleLang" class="db-btn db-btn-sm neo-press neo-sm">{{ lang === 'pt' ? 'english' : 'português' }}</button>
+        <button @click="toggleTheme" class="db-btn db-btn-sm neo-press neo-sm" :aria-pressed="theme === 'dark'">
+          <svg v-if="theme === 'dark'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" />
+            <path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
+          </svg>
+          <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
+          </svg>
+          <span>{{ theme === 'dark' ? t.themeLight : t.themeDark }}</span>
+        </button>
+      </div>
+
+      <h1 class="db-wordmark">down<span class="db-wordmark-suffix">.blue</span></h1>
+
+      <p class="db-meta mb-5 text-center">
+        {{ t.tagline }} ·
+        <a href="https://tally.so/r/wgQLp1" target="_blank" rel="noopener">{{ t.foundBug }}</a> ·
+        {{ t.partOf }} <a href="https://notx.blue">notx.blue</a> {{ t.byAuthor }}
+        <a href="https://bsky.app/profile/joseli.to">@joseli.to</a> ·
+        <a href="https://github.com/breakzplatform/downloader.notx.blue">{{ t.viewSource }}</a>
+      </p>
+
+      <section class="db-panel mt-9 mb-6">
+        <h2 class="db-panel-head">
+          <span>{{ t.panelTitle }}</span>
+        </h2>
+        <div class="p-4">
+          <p class="mb-5"><strong>{{ t.heroStrong }}</strong> {{ t.heroRest }}</p>
+
+          <form @submit.prevent="findVideo" class="flex flex-wrap gap-2">
+            <input v-model="postUrl" type="text" class="db-input min-w-0 flex-1" :placeholder="t.placeholder" required />
+            <button type="submit" :disabled="loadingMode !== null" class="db-btn db-btn-primary shrink-0 px-3 neo-press"
+              :aria-label="t.findBtn" :title="t.findBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" />
+              </svg>
+            </button>
+          </form>
+
+          <p class="db-note mt-4">{{ t.privacy }}</p>
+
+          <!-- Bluesky native video: the same video in three formats. fieldset so
+               the grouping reaches assistive tech, not just the eye. -->
+          <fieldset v-if="videoSource && videoSource.kind === 'bluesky-video'" class="db-choice">
+            <legend class="db-choice-title">{{ t.pickMode }}</legend>
+            <p class="db-note mb-4">{{ t.pickModeHint }}</p>
+            <div class="grid gap-2 sm:grid-cols-3">
+              <button @click="downloadOriginalRaw" :disabled="loadingMode !== null" class="db-btn db-btn-mode neo-press">
+                <span class="db-mode-label">{{ t.btnRaw }}</span>
+                <span class="db-micro">{{ t.btnRawSub }}</span>
+              </button>
+              <button @click="downloadOriginalAsMp4" :disabled="loadingMode !== null" class="db-btn db-btn-mode neo-press">
+                <span class="db-mode-label">{{ t.btnFullMp4 }}</span>
+                <span class="db-micro">{{ t.btnFullMp4Sub }}</span>
+              </button>
+              <button @click="download720pMp4" :disabled="loadingMode !== null" class="db-btn db-btn-mode neo-press">
+                <span class="db-mode-label">{{ t.btn720 }}</span>
+                <span class="db-micro">{{ t.btn720Sub }}</span>
+              </button>
+            </div>
+          </fieldset>
+
+          <!-- GIF: single button -->
+          <div v-if="videoSource && videoSource.kind === 'gif'" class="mt-4">
+            <button @click="downloadGif" :disabled="loadingMode !== null" class="db-btn db-btn-primary w-full neo-press">
+              {{ t.btnGif }}
+            </button>
+          </div>
+
+          <!-- Feedback follows the action that causes it. While the post is
+               being fetched neither action block is rendered, so this still
+               lands directly under the form. -->
+          <div v-if="progressBarVisible" class="db-progress mt-6" role="progressbar" :aria-valuenow="progress"
+            aria-valuemin="0" aria-valuemax="100">
+            <div class="db-progress-fill" :style="{ width: progress + '%' }"></div>
+          </div>
+
+          <p v-if="status" aria-live="polite" class="db-status mt-4" :class="{ 'db-status-error': statusIsError }">
+            <span v-if="statusIsError" aria-hidden="true">✕ </span>{{ status }}
+          </p>
+
+          <!-- Subtitle download (after HLS path) -->
+          <a v-if="subtitleUrl" :href="subtitleUrl" class="db-btn mt-2 w-full neo-press"
+            :download="`${subtitleLang}.vtt`">{{ t.subtitlesPrefix }} ({{ subtitleLang }}.vtt)</a>
+
+          <!-- Video Preview -->
+          <div class="mt-4" v-if="videoPreviewVisible">
+            <video :key="postCid" controls class="mx-auto block w-full max-w-lg border border-strong bg-[#000]"
+              preload="metadata">
+              <source :src="downloadLink" type="video/mp4" />
+              <track :label="subtitleLang" kind="subtitles" v-if="subtitleUrl" :srclang="subtitleLang" :src="subtitleUrl" default />
+            </video>
+          </div>
+
+          <!-- GIF Preview -->
+          <div class="mt-4" v-if="gifPreviewVisible">
+            <img :key="postCid" :src="downloadLink" :alt="t.gifAlt" class="mx-auto block w-full max-w-lg border border-strong" />
+          </div>
+        </div>
+      </section>
+
+      <!-- History -->
+      <section class="db-panel mb-6" v-if="urlHistory.length > 0">
+        <h2 class="db-panel-head">
+          <span>{{ t.historyTitle }}</span>
+          <span>{{ filteredHistory.length }}/{{ urlHistory.length }}</span>
+        </h2>
+        <div class="border-b border-hairline p-3">
+          <input v-model="historyQuery" type="search" :placeholder="t.searchHistory" class="db-input" />
+        </div>
+        <p v-if="filteredHistory.length === 0" class="db-meta p-9 text-center">{{ t.noResults }}</p>
+        <div class="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 lg:grid-cols-3">
+          <article v-for="(item, index) in paginatedHistory" :key="getHistoryItemUrl(item) || index"
+            class="db-card flex min-w-0 flex-col border border-strong neo-lift neo-sm">
+            <button @click="fillAndFind(item)" :title="t.reopen"
+              class="db-thumb-btn relative block w-full overflow-hidden border-b border-strong"
+              style="aspect-ratio: 16 / 9;">
+              <img v-if="getThumbnailUrl(item)" :src="getThumbnailUrl(item)"
+                :alt="getHistoryItemData(item).postId" loading="lazy"
+                crossorigin="anonymous" referrerpolicy="no-referrer"
+                class="db-thumb absolute inset-0 h-full w-full object-cover"
+                @error="handleThumbnailError(getHistoryItemData(item).postId)" />
+              <span v-else class="db-halftone absolute inset-0 block"
+                :style="thumbnailPlaceholderStyle(getHistoryItemData(item).postId)"></span>
+            </button>
+            <div class="flex min-w-0 flex-1 flex-col gap-2 p-2">
+              <p class="db-meta truncate text-text-1">@{{ getHistoryItemData(item).username }}</p>
+              <p v-if="getHistoryItemData(item).text" class="db-clamp-3 text-body-sm text-text-2">
+                {{ getHistoryItemData(item).text }}
+              </p>
+              <div class="mt-auto flex items-center justify-between gap-2 border-t border-hairline pt-2">
+                <a :href="getHistoryItemUrl(item)" class="db-micro truncate" target="_blank" rel="noopener">{{ t.viewPost }}</a>
+                <div class="flex shrink-0 gap-1">
+                  <button @click="fillAndFind(item)" :title="t.reopen" :aria-label="t.reopen" class="db-btn db-btn-sm neo-press neo-sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" />
+                    </svg>
+                  </button>
+                  <button @click="removeFromHistory(getHistoryItemUrl(item))" :title="t.removeHistory"
+                    :aria-label="t.removeHistory" class="db-btn db-btn-sm db-btn-danger neo-press neo-sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+        <div v-if="hasMoreHistory" class="border-t border-hairline p-3 text-center">
+          <button @click="loadMoreHistory" class="db-btn neo-press">{{ t.showMore }}</button>
+        </div>
+      </section>
+
+      <aside class="db-callout mb-9">
+        <!-- lucide-static 0.542.0, info.svg. The label survives as aria-label. -->
+        <span class="db-callout-spine" role="img" :aria-label="t.didYouKnow" :title="t.didYouKnow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" />
+          </svg>
+        </span>
+        <div class="db-callout-body">
+          {{ t.mentionPrefix }} <a href="https://bsky.app/profile/down.blue">@down.blue</a>
+          {{ t.mentionMiddle }} <a href="https://bsky.app/profile/down.blue/post/3l534dn26xp2j">{{ t.iosShortcut }}</a>.
+        </div>
+      </aside>
+
+      <footer class="pt-6">
+        <p class="db-note mb-6 text-center">{{ t.fromBrazil }}</p>
+        <div class="mb-6 flex flex-wrap items-center justify-center gap-2">
+          <span class="db-micro mr-1 text-text-3">{{ t.support }}</span>
+          <a href="https://joselito.wiki.br/Apoie" target="_blank" rel="noopener" class="db-chip db-chip-pix neo-press neo-sm">Pix</a>
+          <a href="https://apoia.se/joselito" target="_blank" rel="noopener" class="db-chip db-chip-apoiase neo-press neo-sm">APOIA.se</a>
+          <a href="https://buymeacoffee.com/joselito" target="_blank" rel="noopener" class="db-chip db-chip-coffee neo-press neo-sm">Buy me a Coffee</a>
+        </div>
+        <p class="db-note text-center">{{ t.respect }}</p>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const { FFmpeg } = FFmpegWASM;
+
+    // Inlined from @ffmpeg/util — its UMD build is broken for <script> usage
+    // (factory body uses CommonJS require/exports). These two helpers are all we need.
+    async function fetchFile(input) {
+      let data;
+      if (typeof input === "string") {
+        data = await (await fetch(input)).arrayBuffer();
+      } else if (input instanceof File || input instanceof Blob) {
+        data = await input.arrayBuffer();
+      } else {
+        data = input;
+      }
+      return new Uint8Array(data);
+    }
+
+    const { createApp, markRaw } = Vue;
+
+    // The sixteen project inks of the joseli.to design system.
+    const INK_NAMES = [
+      "blue", "sky", "cyan", "teal", "green", "lime", "yellow", "amber",
+      "orange", "red", "pink", "magenta", "violet", "purple", "brown", "graphite",
+    ];
+
+    const STRINGS = {
+      en: {
+        bannerPrefix: "Easily share from ANY website to Bluesky: install the",
+        bannerExt: "Redirect Twitter Share to Bluesky",
+        bannerSuffix: " extension. Available for Chrome and Firefox.",
+        tagline: "Work in Progress. Expect bugs",
+        foundBug: "found one?",
+        partOf: "part of",
+        byAuthor: "by",
+        viewSource: "View-source",
+        themeDark: "dark",
+        themeLight: "light",
+        panelTitle: "Download a video",
+        heroStrong: "Download Bluesky videos and GIFs directly in your browser!",
+        heroRest: "Enter a Bluesky post URL:",
+        placeholder: "https://bsky.app/profile/kaelltx.bsky.social/post/3l4aiybdeoo2q",
+        findBtn: "Download",
+        privacy: "Fast, secure, and private — no external services required. No data, logs or analytics collected.",
+        btnRaw: "Original (raw)",
+        btnRawSub: "as uploaded · no re-encode",
+        btnFullMp4: "Full quality MP4",
+        btnFullMp4Sub: "original re-encoded to MP4",
+        btn720: "720p MP4",
+        btn720Sub: "smaller · streaming quality",
+        btnGif: "Download GIF",
+        subtitlesPrefix: "Download Subtitles",
+        gifAlt: "GIF Preview",
+        historyTitle: "Download History",
+        searchHistory: "Search history (handle, post id, text)...",
+        showMore: "Show more",
+        noResults: "No matching downloads",
+        viewPost: "View post →",
+        reopen: "Re-open",
+        removeHistory: "Remove from history",
+        didYouKnow: "Did you know?",
+        mentionPrefix: "You can mention",
+        mentionMiddle: "in a reply to a video post to get a download link instantly! You can also use the",
+        iosShortcut: "iOS Shortcut",
+        fromBrazil: "Directly from Brazil by Joselito, with much love and care. This site does not use any cookies or collect any data. This site is not related to Bluesky.",
+        support: "Support this project:",
+        respect: "Respect copyright and Bluesky's terms of service.",
+        statusValidating: "Validating post URL...",
+        statusLoading: "Loading post from Bluesky...",
+        statusAnalyzing: "Analyzing post content...",
+        statusResolvingPds: "Resolving author PDS...",
+        pickMode: "Choose how to download",
+        pickModeHint: "The same video in three formats. Picking one starts the download right away.",
+        statusDownloadingOriginal: "Downloading original blob...",
+        statusConverting: "Converting to MP4...",
+        statusLoadingFfmpeg: "Loading converter...",
+        statusDownloadingHls: "Downloading 720p video...",
+        statusDownloadingGif: "Downloading GIF...",
+        errInvalidUrl: "Please enter a valid Bluesky post URL",
+        errPostNotFound: "Post not found — it may have been deleted",
+        errAccessDenied: "Access denied — this post may be private",
+        errFetch: "Unable to fetch post from Bluesky",
+        errInvalidFormat: "Invalid Bluesky URL format",
+        errNetwork: "Network error — please check your connection",
+        errTimeout: "Request timed out — Bluesky may be slow to respond",
+        errProcessing: "Error processing post — please try again",
+        errYoutube: "YouTube videos are not supported",
+        errExternal: "External content not supported",
+        errOnlyBsky: "Only Bluesky native videos and GIFs are supported.",
+        errImagesPost: "This post contains images, not videos or GIFs.",
+        errQuotePost: "This is a quote post without video or GIF content.",
+        errTextPost: "This is a text post without video or GIF content.",
+        errNoVideo: "No video or GIF found in this post.",
+        errPdsResolve: "Could not resolve the author's PDS endpoint.",
+        errBlobFetch: "Could not download the original blob.",
+        errConvert: "Conversion failed.",
+      },
+      pt: {
+        bannerPrefix: "Compartilhe facilmente de QUALQUER site para o Bluesky: instale a extensão",
+        bannerExt: "Redirect Twitter Share to Bluesky",
+        bannerSuffix: ". Disponível para Chrome e Firefox.",
+        tagline: "Em desenvolvimento. Bugs acontecem",
+        foundBug: "achou um?",
+        partOf: "parte do",
+        byAuthor: "por",
+        viewSource: "Ver código",
+        themeDark: "escuro",
+        themeLight: "claro",
+        panelTitle: "Baixar um vídeo",
+        heroStrong: "Baixe vídeos e GIFs do Bluesky direto no seu navegador!",
+        heroRest: "Cole a URL de um post do Bluesky:",
+        placeholder: "https://bsky.app/profile/kaelltx.bsky.social/post/3l4aiybdeoo2q",
+        findBtn: "Baixar",
+        privacy: "Rápido, seguro e privado — não usa serviços externos. Nenhum dado, log ou analytics é coletado.",
+        btnRaw: "Original (raw)",
+        btnRawSub: "como foi enviado · sem reencode",
+        btnFullMp4: "MP4 qualidade total",
+        btnFullMp4Sub: "original reencodado em MP4",
+        btn720: "MP4 720p",
+        btn720Sub: "menor · qualidade de streaming",
+        btnGif: "Baixar GIF",
+        subtitlesPrefix: "Baixar legendas",
+        gifAlt: "Pré-visualização do GIF",
+        historyTitle: "Histórico de downloads",
+        searchHistory: "Buscar no histórico (handle, id do post, texto)...",
+        showMore: "Mostrar mais",
+        noResults: "Nenhum download encontrado",
+        viewPost: "Ver post →",
+        reopen: "Reabrir",
+        removeHistory: "Remover do histórico",
+        didYouKnow: "Você sabia?",
+        mentionPrefix: "Você pode mencionar",
+        mentionMiddle: "em uma resposta a um post de vídeo para receber o link de download na hora! Também dá pra usar o",
+        iosShortcut: "atalho do iOS",
+        fromBrazil: "Direto do Brasil pelo Joselito, com muito carinho. Este site não usa cookies nem coleta dados. Este site não tem relação com o Bluesky.",
+        support: "Apoie este projeto:",
+        respect: "Respeite direitos autorais e os termos de uso do Bluesky.",
+        statusValidating: "Validando URL do post...",
+        statusLoading: "Carregando post do Bluesky...",
+        statusAnalyzing: "Analisando o conteúdo do post...",
+        statusResolvingPds: "Resolvendo PDS do autor...",
+        pickMode: "Escolha como baixar",
+        pickModeHint: "O mesmo vídeo em três formatos. Ao escolher um, o download começa na hora.",
+        statusDownloadingOriginal: "Baixando blob original...",
+        statusConverting: "Convertendo para MP4...",
+        statusLoadingFfmpeg: "Carregando conversor...",
+        statusDownloadingHls: "Baixando vídeo 720p...",
+        statusDownloadingGif: "Baixando GIF...",
+        errInvalidUrl: "Cole uma URL válida de post do Bluesky",
+        errPostNotFound: "Post não encontrado — pode ter sido apagado",
+        errAccessDenied: "Acesso negado — este post pode ser privado",
+        errFetch: "Não foi possível buscar o post no Bluesky",
+        errInvalidFormat: "Formato de URL inválido",
+        errNetwork: "Erro de rede — confira sua conexão",
+        errTimeout: "Tempo esgotado — o Bluesky pode estar lento",
+        errProcessing: "Erro ao processar o post — tente de novo",
+        errYoutube: "Vídeos do YouTube não são suportados",
+        errExternal: "Conteúdo externo não suportado",
+        errOnlyBsky: "Apenas vídeos nativos e GIFs do Bluesky são suportados.",
+        errImagesPost: "Este post contém imagens, não vídeo ou GIF.",
+        errQuotePost: "Este é um post de citação sem vídeo ou GIF.",
+        errTextPost: "Este é um post de texto sem vídeo ou GIF.",
+        errNoVideo: "Nenhum vídeo ou GIF encontrado neste post.",
+        errPdsResolve: "Não consegui resolver o PDS do autor.",
+        errBlobFetch: "Não consegui baixar o blob original.",
+        errConvert: "Falha na conversão.",
+      },
+    };
+
+    // Dark mode is deliberately opt-in: the OS preference is never consulted.
+    function detectTheme() {
+      return localStorage.getItem("theme") === "dark" ? "dark" : "light";
+    }
+
+    function detectLang() {
+      const stored = localStorage.getItem("lang");
+      if (stored === "pt" || stored === "en") return stored;
+      const nav = (navigator.language || navigator.userLanguage || "en").toLowerCase();
+      return nav.startsWith("pt") ? "pt" : "en";
+    }
+
+    createApp({
+      data() {
+        return {
+          ffmpeg: null,
+          lang: detectLang(),
+          theme: detectTheme(),
+          postUrl: "",
+          postCid: "",
+          status: "",
+          progress: 0,
+          progressBarVisible: false,
+          videoPreviewVisible: false,
+          gifPreviewVisible: false,
+          downloadLink: "",
+          downloadReady: false,
+          subtitleLang: "",
+          subtitleUrl: "",
+          urlHistory: [],
+          historyQuery: "",
+          historyPage: 1,
+          historyPageSize: 20,
+          historyMaxEntries: 5000,
+          currentPostData: null,
+          videoSource: null,
+          loadingMode: null,
+          pdsCache: {},
+          thumbnailErrors: {},
+        };
+      },
+      computed: {
+        t() { return STRINGS[this.lang]; },
+        // Errors and progress share one status line; the error strings are the
+        // only ones that need the error colour, so match against them directly.
+        statusIsError() {
+          if (!this.status) return false;
+          return Object.entries(this.t).some(([key, value]) => key.startsWith("err") && value === this.status);
+        },
+        filteredHistory() {
+          const q = this.historyQuery.trim().toLowerCase();
+          if (!q) return this.urlHistory;
+          return this.urlHistory.filter(item => {
+            const data = this.getHistoryItemData(item);
+            const haystack = `${data.username || ""} ${data.displayName || ""} ${data.postId || ""} ${data.text || ""} ${data.videoAlt || ""}`.toLowerCase();
+            return haystack.includes(q);
+          });
+        },
+        paginatedHistory() {
+          return this.filteredHistory.slice(0, this.historyPage * this.historyPageSize);
+        },
+        hasMoreHistory() {
+          return this.filteredHistory.length > this.paginatedHistory.length;
+        },
+      },
+      watch: {
+        historyQuery() { this.historyPage = 1; },
+      },
+      async mounted() {
+        document.documentElement.lang = this.lang === "pt" ? "pt-BR" : "en";
+        document.documentElement.dataset.theme = this.theme;
+        this.loadHistory();
+        this.backfillHistoryThumbnails();
+
+        // markRaw: keep the FFmpeg instance out of Vue's reactive Proxy.
+        // The 0.12 class uses private fields (#x); a reactive Proxy wrapper
+        // breaks private member access ("Cannot read private member").
+        this.ffmpeg = markRaw(new FFmpeg());
+        this.ffmpeg.on("progress", ({ progress }) => {
+          const pct = Math.max(0, Math.min(1, Number(progress) || 0));
+          this.progress = 50 + Math.round(pct * 50);
+        });
+
+        try {
+          await this.ensureFfmpeg();
+        } catch (error) {
+          console.warn("Failed to preload FFmpeg:", error);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const url = urlParams.get("url");
+        if (url) {
+          this.postUrl = url;
+          this.findVideo();
+        }
+      },
+      beforeUnmount() { this.cleanupBlobUrls(); },
+
+      methods: {
+        toggleLang() {
+          this.lang = this.lang === "pt" ? "en" : "pt";
+          localStorage.setItem("lang", this.lang);
+          document.documentElement.lang = this.lang === "pt" ? "pt-BR" : "en";
+        },
+        toggleTheme() {
+          this.theme = this.theme === "dark" ? "light" : "dark";
+          localStorage.setItem("theme", this.theme);
+          document.documentElement.dataset.theme = this.theme;
+        },
+
+        // ---- History ----
+        loadHistory() {
+          const saved = JSON.parse(localStorage.getItem("urlHistory") || "[]");
+          this.urlHistory = saved.slice(0, this.historyMaxEntries).map(item => {
+            if (typeof item === "string") {
+              return { url: item, timestamp: Date.now(), postData: this.extractPostDataFromUrl(item) };
+            }
+            return item;
+          });
+        },
+        saveToHistory(url, postData = null) {
+          const entry = { url, timestamp: Date.now(), postData: postData || this.extractPostDataFromUrl(url) };
+          const idx = this.urlHistory.findIndex(i => (typeof i === "string" ? i : i.url) === url);
+          if (idx !== -1) this.urlHistory.splice(idx, 1);
+          this.urlHistory.unshift(entry);
+          if (this.urlHistory.length > this.historyMaxEntries) this.urlHistory.length = this.historyMaxEntries;
+          try {
+            localStorage.setItem("urlHistory", JSON.stringify(this.urlHistory));
+          } catch (err) {
+            console.warn("localStorage full — trimming history", err);
+            while (this.urlHistory.length > 100) {
+              this.urlHistory.pop();
+              try {
+                localStorage.setItem("urlHistory", JSON.stringify(this.urlHistory));
+                break;
+              } catch {}
+            }
+          }
+        },
+        loadMoreHistory() {
+          this.historyPage += 1;
+          this.backfillHistoryThumbnails();
+        },
+        extractPostDataFromUrl(url) {
+          try {
+            const { profile, post } = this.extractProfileAndPost(url);
+            return { username: profile, displayName: profile, postId: post, avatar: null };
+          } catch {
+            return { username: "Unknown", displayName: "Unknown", postId: "Unknown", avatar: null };
+          }
+        },
+        removeFromHistory(url) {
+          this.urlHistory = this.urlHistory.filter(i => {
+            if (!i) return true;
+            return (typeof i === "string" ? i : i.url || "") !== url;
+          });
+          localStorage.setItem("urlHistory", JSON.stringify(this.urlHistory));
+        },
+        fillAndFind(historyItem) {
+          this.postUrl = typeof historyItem === "string" ? historyItem : historyItem.url;
+          this.findVideo();
+        },
+        getHistoryItemUrl(item) {
+          if (!item) return "";
+          return typeof item === "string" ? item : item.url || "";
+        },
+        getHistoryItemData(item) {
+          if (!item) return { username: "Unknown", displayName: "Unknown", postId: "Unknown", avatar: null };
+          if (typeof item === "string") return this.extractPostDataFromUrl(item);
+          if (item.postData) return item.postData;
+          if (item.url) return this.extractPostDataFromUrl(item.url);
+          return { username: "Unknown", displayName: "Unknown", postId: "Unknown", avatar: null };
+        },
+        // A post with no thumbnail gets an empty halftone field. The dot takes
+        // one of the sixteen inks, picked from the post id so the same post
+        // always screens the same colour. The dark theme ignores this and
+        // screens everything in amber — see .db-halftone.
+        thumbnailPlaceholderStyle(postId) {
+          if (!postId || typeof postId !== "string" || postId === "Unknown") {
+            return "--halftone-ink: var(--ink-graphite);";
+          }
+          let hash = 0;
+          for (let i = 0; i < postId.length; i++) {
+            hash = (((hash << 5) - hash) + postId.charCodeAt(i)) | 0;
+          }
+          return `--halftone-ink: var(--ink-${INK_NAMES[Math.abs(hash) % INK_NAMES.length]});`;
+        },
+        getThumbnailUrl(item) {
+          const data = this.getHistoryItemData(item);
+          if (!data || !data.videoDid || !data.videoCid) return null;
+          if (this.thumbnailErrors[data.postId]) return null;
+          return `https://video.bsky.app/watch/${encodeURIComponent(data.videoDid)}/${encodeURIComponent(data.videoCid)}/thumbnail.jpg`;
+        },
+        handleThumbnailError(postId) {
+          if (!postId) return;
+          this.thumbnailErrors[postId] = true;
+        },
+        async backfillHistoryThumbnails() {
+          if (this._backfillRunning) return;
+          this._backfillRunning = true;
+          const BACKFILL_VERSION = 2;
+          const targets = this.paginatedHistory.filter(item => {
+            if (!item || typeof item === "string") return true;
+            const data = item.postData || {};
+            const hasAllFields = data.videoDid && data.videoCid && data.text !== undefined && data.videoAlt !== undefined;
+            if (hasAllFields) return false;
+            if (item.backfillVersion === BACKFILL_VERSION) return false;
+            return true;
+          });
+          if (targets.length === 0) {
+            this._backfillRunning = false;
+            return;
+          }
+
+          let mutated = false;
+          for (const item of targets) {
+            const url = this.getHistoryItemUrl(item);
+            if (!url) continue;
+            try {
+              const { profile, post } = this.extractProfileAndPost(url);
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 10000);
+              const res = await fetch(
+                `https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=${encodeURIComponent(`at://${profile}/app.bsky.feed.post/${post}`)}&depth=0`,
+                { signal: controller.signal }
+              );
+              clearTimeout(timeoutId);
+
+              if (typeof item === "string") {
+                const idx = this.urlHistory.indexOf(item);
+                if (idx === -1) continue;
+                const upgraded = { url: item, timestamp: Date.now(), postData: this.extractPostDataFromUrl(item), backfillVersion: BACKFILL_VERSION };
+                this.urlHistory.splice(idx, 1, upgraded);
+                mutated = true;
+                if (!res.ok) continue;
+                const data = await res.json();
+                this.applyBackfillData(upgraded, data.thread?.post);
+              } else {
+                item.backfillVersion = BACKFILL_VERSION;
+                delete item.backfillTried;
+                mutated = true;
+                if (!res.ok) continue;
+                const data = await res.json();
+                this.applyBackfillData(item, data.thread?.post);
+              }
+            } catch (err) {
+              if (typeof item !== "string") {
+                item.backfillVersion = BACKFILL_VERSION;
+                delete item.backfillTried;
+                mutated = true;
+              }
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+          if (mutated) {
+            try {
+              localStorage.setItem("urlHistory", JSON.stringify(this.urlHistory));
+            } catch (err) {
+              console.warn("localStorage write failed during backfill", err);
+            }
+          }
+          this._backfillRunning = false;
+        },
+        applyBackfillData(entry, post) {
+          if (!post) return;
+          const info = this.extractVideoInfo(post);
+          if (!entry.postData) entry.postData = this.extractPostDataFromUrl(entry.url);
+          if (post.author) {
+            entry.postData.username = post.author.handle || entry.postData.username;
+            entry.postData.displayName = post.author.displayName || post.author.handle || entry.postData.displayName;
+            entry.postData.avatar = post.author.avatar || entry.postData.avatar || null;
+          }
+          entry.postData.text = post.record?.text || "";
+          if (info && info.kind === "bluesky-video") {
+            entry.postData.videoDid = info.did;
+            entry.postData.videoCid = info.cid;
+            entry.postData.videoAlt = info.alt || "";
+          }
+        },
+
+        // ---- URL parsing ----
+        extractProfileAndPost(postUrl) {
+          const m = postUrl.match(/profile\/([^\/]+)\/post\/([^\/]+)/);
+          if (!m) throw new Error("Invalid URL format");
+          return { profile: m[1], post: m[2] };
+        },
+
+        // ---- Embed extraction (returns full Bluesky video info or fallback URL) ----
+        extractVideoInfo(post) {
+          const author = post.author || {};
+          const fromVideoView = (e) => ({
+            kind: "bluesky-video",
+            did: author.did,
+            cid: e.cid,
+            playlistUrl: e.playlist,
+            alt: e.alt || "",
+          });
+          const walk = (embed) => {
+            if (!embed) return null;
+            if (embed["$type"] === "app.bsky.embed.video#view" && embed.playlist && embed.cid) {
+              return fromVideoView(embed);
+            }
+            if (embed["$type"] === "app.bsky.embed.recordWithMedia#view" && embed.media) {
+              if (embed.media["$type"] === "app.bsky.embed.video#view" && embed.media.playlist && embed.media.cid) {
+                return { kind: "bluesky-video", did: author.did, cid: embed.media.cid, playlistUrl: embed.media.playlist, alt: embed.media.alt || "" };
+              }
+              if (embed.media["$type"] === "app.bsky.embed.external#view" && embed.media.external?.uri) {
+                return classifyExternal(embed.media.external.uri);
+              }
+            }
+            if (embed["$type"] === "app.bsky.embed.record#view" && embed.record) {
+              if (Array.isArray(embed.record.embeds)) {
+                for (const ne of embed.record.embeds) {
+                  const found = walk(ne);
+                  if (found) {
+                    if (found.kind === "bluesky-video" && !found.did && embed.record.author?.did) found.did = embed.record.author.did;
+                    return found;
+                  }
+                }
+              }
+              if (embed.record.embed) return walk(embed.record.embed);
+            }
+            if (embed["$type"] === "app.bsky.embed.external#view" && embed.external?.uri) {
+              return classifyExternal(embed.external.uri);
+            }
+            return null;
+          };
+          const classifyExternal = (uri) => {
+            if (this.isGifUrl(uri)) return { kind: "gif", url: uri };
+            const hostname = (() => { try { return new URL(uri).hostname; } catch { return ""; } })();
+            return { kind: "external", url: uri, hostname };
+          };
+          return walk(post.embed);
+        },
+        isGifUrl(url) {
+          return url.includes("tenor.com") ||
+            url.includes("giphy.com") ||
+            url.toLowerCase().endsWith(".gif");
+        },
+
+        // ---- DID resolution → PDS endpoint ----
+        async resolvePds(did) {
+          if (!did) throw new Error("Missing DID");
+          if (this.pdsCache[did]) return this.pdsCache[did];
+          let doc;
+          if (did.startsWith("did:plc:")) {
+            const res = await fetch(`https://plc.directory/${encodeURIComponent(did)}`);
+            if (!res.ok) throw new Error(`plc.directory returned ${res.status}`);
+            doc = await res.json();
+          } else if (did.startsWith("did:web:")) {
+            const domain = decodeURIComponent(did.slice("did:web:".length)).split(":")[0];
+            const res = await fetch(`https://${domain}/.well-known/did.json`);
+            if (!res.ok) throw new Error(`did.json returned ${res.status}`);
+            doc = await res.json();
+          } else {
+            throw new Error(`Unsupported DID method: ${did}`);
+          }
+          const services = doc.service || [];
+          const svc = services.find(s =>
+            (s.id && s.id.endsWith("#atproto_pds")) ||
+            s.type === "AtprotoPersonalDataServer"
+          );
+          if (!svc?.serviceEndpoint) throw new Error("No atproto_pds service in DID document");
+          const endpoint = svc.serviceEndpoint.replace(/\/$/, "");
+          this.pdsCache[did] = endpoint;
+          return endpoint;
+        },
+
+        // ---- Main flow: find video metadata only ----
+        async findVideo() {
+          this.resetState();
+          const postUrl = this.postUrl;
+          if (!postUrl || !postUrl.includes("bsky.app")) {
+            this.status = this.t.errInvalidUrl;
+            return;
+          }
+          this.loadingMode = "find";
+          this.progressBarVisible = true;
+          this.progress = 10;
+          this.status = this.t.statusValidating;
+          try {
+            const { profile, post } = this.extractProfileAndPost(postUrl);
+            this.status = this.t.statusLoading;
+            this.progress = 25;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const threadRes = await fetch(
+              `https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=${encodeURIComponent(`at://${profile}/app.bsky.feed.post/${post}`)}&depth=10`,
+              { signal: controller.signal }
+            );
+            clearTimeout(timeoutId);
+            if (!threadRes.ok) throw new Error(`Failed to fetch post: ${threadRes.status}`);
+            const data = await threadRes.json();
+            if (!data.thread?.post) throw new Error("Post not found");
+            this.progress = 45;
+            this.postCid = data.thread.post.cid;
+            this.currentPostData = {
+              username: data.thread.post.author.handle,
+              displayName: data.thread.post.author.displayName || data.thread.post.author.handle,
+              postId: post,
+              avatar: data.thread.post.author.avatar || null,
+              timestamp: data.thread.post.indexedAt,
+              text: data.thread.post.record?.text || "",
+            };
+            this.status = this.t.statusAnalyzing;
+            this.progress = 60;
+
+            const info = this.extractVideoInfo(data.thread.post);
+            if (!info) {
+              this.handleNoVideo(data.thread.post);
+              return;
+            }
+
+            if (info.kind === "bluesky-video") {
+              this.status = this.t.statusResolvingPds;
+              this.progress = 80;
+              try {
+                info.pds = await this.resolvePds(info.did);
+              } catch (err) {
+                console.warn("PDS resolution failed; raw mode will be unavailable.", err);
+                info.pds = null;
+              }
+              info.postId = post;
+              this.videoSource = info;
+              this.status = "";
+              this.progress = 100;
+              this.progressBarVisible = false;
+              this.currentPostData.videoDid = info.did;
+              this.currentPostData.videoCid = info.cid;
+              this.currentPostData.videoAlt = info.alt || "";
+              this.saveToHistory(this.postUrl, this.currentPostData);
+            } else if (info.kind === "gif") {
+              info.postId = post;
+              this.videoSource = info;
+              this.status = "";
+              this.progressBarVisible = false;
+            } else {
+              this.handleExternal(info);
+            }
+          } catch (error) {
+            this.handleProcessError(error);
+          } finally {
+            this.loadingMode = null;
+          }
+        },
+
+        handleNoVideo(post) {
+          const text = post.record?.text || "";
+          const hasImages = post.embed?.images?.length > 0;
+          const hasQuote = post.embed?.record;
+          if (hasImages) this.status = this.t.errImagesPost;
+          else if (hasQuote) this.status = this.t.errQuotePost;
+          else if (text.length > 0) this.status = this.t.errTextPost;
+          else this.status = this.t.errNoVideo;
+          this.progressBarVisible = false;
+        },
+        handleExternal(info) {
+          if (info.url.includes("youtube.com") || info.url.includes("youtu.be")) {
+            this.status = this.t.errYoutube;
+          } else {
+            this.status = `${this.t.errExternal} (${info.hostname})`;
+          }
+          this.progressBarVisible = false;
+        },
+        handleProcessError(error) {
+          console.error("Find error:", error);
+          this.progressBarVisible = false;
+          if (error.name === "AbortError") this.status = this.t.errTimeout;
+          else if (error.message.includes("Failed to fetch post")) {
+            if (error.message.includes("404")) this.status = this.t.errPostNotFound;
+            else if (error.message.includes("403")) this.status = this.t.errAccessDenied;
+            else this.status = this.t.errFetch;
+          } else if (error.message.includes("Post not found")) this.status = this.t.errPostNotFound;
+          else if (error.message.includes("Invalid URL format")) this.status = this.t.errInvalidFormat;
+          else if (error.message.includes("NetworkError") || error.message.includes("fetch")) this.status = this.t.errNetwork;
+          else this.status = this.t.errProcessing;
+        },
+
+        // ---- Mode 1: original raw blob from PDS ----
+        async downloadOriginalRaw() {
+          if (!this.videoSource || this.videoSource.kind !== "bluesky-video") return;
+          if (!this.videoSource.pds) {
+            this.status = this.t.errPdsResolve;
+            return;
+          }
+          this.loadingMode = "raw";
+          this.progressBarVisible = true;
+          this.progress = 10;
+          this.status = this.t.statusDownloadingOriginal;
+          try {
+            const { did, cid, postId } = this.videoSource;
+            const url = `${this.videoSource.pds}/xrpc/com.atproto.sync.getBlob?did=${encodeURIComponent(did)}&cid=${encodeURIComponent(cid)}`;
+            const blob = await this.fetchBlobWithProgress(url);
+            const ext = extensionFromMime(blob.type) || "mp4";
+            const filename = `video-${postId}.${ext}`;
+            triggerDownload(blob, filename);
+            this.downloadLink = URL.createObjectURL(blob);
+            this.videoPreviewVisible = blob.type.startsWith("video/");
+            this.downloadReady = true;
+            this.progress = 100;
+            this.progressBarVisible = false;
+            this.status = "";
+          } catch (error) {
+            console.error("Raw download failed:", error);
+            this.status = this.t.errBlobFetch;
+            this.progressBarVisible = false;
+          } finally {
+            this.loadingMode = null;
+          }
+        },
+
+        // ---- Mode 2: original blob → MP4 (no-op if already mp4; otherwise transcode) ----
+        async downloadOriginalAsMp4() {
+          if (!this.videoSource || this.videoSource.kind !== "bluesky-video") return;
+          if (!this.videoSource.pds) {
+            this.status = this.t.errPdsResolve;
+            return;
+          }
+          this.loadingMode = "originalMp4";
+          this.progressBarVisible = true;
+          this.progress = 5;
+          try {
+            const { did, cid, postId } = this.videoSource;
+            this.status = this.t.statusDownloadingOriginal;
+            const url = `${this.videoSource.pds}/xrpc/com.atproto.sync.getBlob?did=${encodeURIComponent(did)}&cid=${encodeURIComponent(cid)}`;
+            const inputBlob = await this.fetchBlobWithProgress(url, 5, 45);
+            const outputName = `video-${postId}.mp4`;
+
+            if ((inputBlob.type || "").toLowerCase().startsWith("video/mp4")) {
+              const blob = new Blob([await inputBlob.arrayBuffer()], { type: "video/mp4" });
+              this.downloadLink = URL.createObjectURL(blob);
+              triggerDownload(blob, outputName);
+              this.videoPreviewVisible = true;
+              this.downloadReady = true;
+              this.progress = 100;
+              this.progressBarVisible = false;
+              this.status = "";
+              return;
+            }
+
+            this.status = this.t.statusLoadingFfmpeg;
+            await this.ensureFfmpeg();
+            const inputName = `input.${extensionFromMime(inputBlob.type) || "bin"}`;
+            await this.ffmpeg.writeFile(inputName, await fetchFile(inputBlob));
+            this.status = this.t.statusConverting;
+            this.progress = 50;
+            try {
+              await this.ffmpeg.exec([
+                "-i", inputName,
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-movflags", "+faststart",
+                outputName,
+              ]);
+            } catch (e) {
+              console.warn("Copy codec failed; re-encoding video too:", e);
+              await this.ffmpeg.exec([
+                "-i", inputName,
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-crf", "20",
+                "-c:a", "aac",
+                "-movflags", "+faststart",
+                outputName,
+              ]);
+            }
+            const out = await this.ffmpeg.readFile(outputName);
+            const blob = new Blob([out.buffer], { type: "video/mp4" });
+            try { await this.ffmpeg.deleteFile(inputName); } catch {}
+            try { await this.ffmpeg.deleteFile(outputName); } catch {}
+            this.downloadLink = URL.createObjectURL(blob);
+            triggerDownload(blob, outputName);
+            this.videoPreviewVisible = true;
+            this.downloadReady = true;
+            this.progress = 100;
+            this.progressBarVisible = false;
+            this.status = "";
+          } catch (error) {
+            console.error("Original→MP4 failed:", error);
+            this.status = this.t.errConvert;
+            this.progressBarVisible = false;
+          } finally {
+            this.loadingMode = null;
+          }
+        },
+
+        // ---- Mode 3: HLS 720p → MP4 (mux.js remux first, ffmpeg fallback) ----
+        async download720pMp4() {
+          if (!this.videoSource || this.videoSource.kind !== "bluesky-video") return;
+          this.loadingMode = "720p";
+          this.progressBarVisible = true;
+          this.progress = 5;
+          this.status = this.t.statusDownloadingHls;
+          try {
+            const { playlistUrl, postId } = this.videoSource;
+            const tsBlob = await this.processPlaylist(playlistUrl);
+            const outputName = `video-${postId}-720p.mp4`;
+
+            this.status = this.t.statusConverting;
+            this.progress = 50;
+
+            let mp4Blob = null;
+            try {
+              mp4Blob = await tsBlobToMp4WithMuxjs(tsBlob);
+              console.log("✅ Remuxed TS → MP4 with mux.js (no transcoding)");
+            } catch (muxErr) {
+              console.warn("mux.js remux failed; falling back to ffmpeg:", muxErr);
+              mp4Blob = await this.tsBlobToMp4WithFfmpeg(tsBlob);
+            }
+
+            this.downloadLink = URL.createObjectURL(mp4Blob);
+            triggerDownload(mp4Blob, outputName);
+            this.videoPreviewVisible = true;
+            this.downloadReady = true;
+            this.progress = 100;
+            this.progressBarVisible = false;
+            this.status = "";
+          } catch (error) {
+            console.error("720p path failed:", error);
+            this.status = this.t.errConvert;
+            this.progressBarVisible = false;
+          } finally {
+            this.loadingMode = null;
+          }
+        },
+
+        async tsBlobToMp4WithFfmpeg(tsBlob) {
+          await this.ensureFfmpeg();
+          const inputName = "input.ts";
+          const outputName = "out.mp4";
+          await this.ffmpeg.writeFile(inputName, await fetchFile(tsBlob));
+          try {
+            await this.ffmpeg.exec([
+              "-i", inputName,
+              "-c:v", "copy", "-c:a", "copy",
+              "-movflags", "+faststart",
+              "-avoid_negative_ts", "make_zero",
+              outputName,
+            ]);
+          } catch (e) {
+            console.warn("ffmpeg copy codec failed; re-encoding:", e);
+            await this.ffmpeg.exec([
+              "-i", inputName,
+              "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+              "-c:a", "aac", "-movflags", "+faststart",
+              outputName,
+            ]);
+          }
+          const out = await this.ffmpeg.readFile(outputName);
+          const blob = new Blob([out.buffer], { type: "video/mp4" });
+          try { await this.ffmpeg.deleteFile(inputName); } catch {}
+          try { await this.ffmpeg.deleteFile(outputName); } catch {}
+          return blob;
+        },
+
+        async ensureFfmpeg() {
+          if (this.ffmpeg.loaded) return;
+          // @ffmpeg/ffmpeg pinned to 0.12.7: spawns a *classic* class-worker
+          // that loads the core via importScripts (0.12.10+ switched to a
+          // module-worker that can't load the UMD core without a bundler).
+          // The class worker MUST be lib/814.ffmpeg.js — 0.12.7 resolves it
+          // by webpack publicPath + a hardcoded chunk name and ignores
+          // classWorkerURL, so that one file cannot be version-suffixed.
+          // Single-thread @ffmpeg/core: no SharedArrayBuffer / COOP-COEP needed.
+          const base = `${location.origin}/lib`;
+          await this.ffmpeg.load({
+            coreURL: `${base}/ffmpeg-core-st-0.12.6.js`,
+            wasmURL: `${base}/ffmpeg-core-st-0.12.6.wasm`,
+          });
+        },
+
+        // ---- GIF mode ----
+        async downloadGif() {
+          if (!this.videoSource || this.videoSource.kind !== "gif") return;
+          this.loadingMode = "gif";
+          this.progressBarVisible = true;
+          this.progress = 50;
+          this.status = this.t.statusDownloadingGif;
+          try {
+            const blob = await this.fetchBlobWithProgress(this.videoSource.url, 50, 50);
+            this.downloadLink = URL.createObjectURL(blob);
+            this.gifPreviewVisible = true;
+            triggerDownload(blob, `${this.postCid}.gif`);
+            this.downloadReady = true;
+            this.progress = 100;
+            this.progressBarVisible = false;
+            this.status = "";
+          } catch (error) {
+            console.error("GIF download failed:", error);
+            this.status = this.t.errBlobFetch;
+            this.progressBarVisible = false;
+          } finally {
+            this.loadingMode = null;
+          }
+        },
+
+        // ---- HLS helpers ----
+        async processPlaylist(playlistUrl) {
+          const masterRes = await fetch(playlistUrl);
+          if (!masterRes.ok) throw new Error(`Failed to fetch playlist: ${masterRes.status}`);
+          const master = await masterRes.text();
+          const subLang = this.extractSubtitleLang(master);
+          if (subLang) this.setSubtitleUrl(playlistUrl, subLang);
+          const variantUrl = this.parseHighestQualityVideoUrl(master, playlistUrl);
+          const variantRes = await fetch(variantUrl);
+          if (!variantRes.ok) throw new Error(`Failed to fetch variant: ${variantRes.status}`);
+          const variant = await variantRes.text();
+          const segs = this.parseSegmentUrls(variant, variantUrl);
+          return await this.downloadSegments(segs);
+        },
+        extractSubtitleLang(m3u8) {
+          for (const line of m3u8.split("\n")) {
+            if (line.startsWith("#EXT-X-MEDIA") && line.includes("TYPE=SUBTITLES")) {
+              const m = line.match(/LANGUAGE="([^"]+)"/);
+              if (m) return m[1];
+            }
+          }
+          return null;
+        },
+        async setSubtitleUrl(playlistUrl, lang) {
+          this.subtitleLang = lang;
+          try {
+            const url = `${playlistUrl.replace("playlist.m3u8", "")}subtitles/${lang}.vtt`;
+            const res = await fetch(url);
+            if (!res.ok) return;
+            this.subtitleUrl = URL.createObjectURL(await res.blob());
+          } catch (e) { console.warn("Subtitle load failed:", e); }
+        },
+        parseHighestQualityVideoUrl(master, baseUrl) {
+          let best = 0, url = "";
+          const lines = master.split("\n");
+          lines.forEach((line, i) => {
+            if (line.startsWith("#EXT-X-STREAM-INF")) {
+              const m = line.match(/BANDWIDTH=(\d+)/);
+              if (m) {
+                const bw = parseInt(m[1]);
+                if (bw > best) { best = bw; url = lines[i + 1]; }
+              }
+            }
+          });
+          return new URL(url, baseUrl).toString();
+        },
+        parseSegmentUrls(variant, baseUrl) {
+          return variant.split("\n")
+            .filter(l => !l.startsWith("#") && l.trim() !== "")
+            .map(s => new URL(s, baseUrl).toString());
+        },
+        async downloadSegments(urls) {
+          const chunks = new Array(urls.length);
+          let done = 0;
+          const concurrency = 6;
+          const fetchOne = async (url, i) => {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Segment ${i}: ${res.status}`);
+            chunks[i] = await res.arrayBuffer();
+            done++;
+            this.progress = 5 + (done / urls.length) * 40;
+          };
+          for (let i = 0; i < urls.length; i += concurrency) {
+            const batch = urls.slice(i, i + concurrency);
+            await Promise.all(batch.map((u, k) => fetchOne(u, i + k)));
+          }
+          return new Blob(chunks, { type: "video/MP2T" });
+        },
+
+        // ---- Generic fetch with progress (for blob endpoints that send Content-Length) ----
+        async fetchBlobWithProgress(url, progressStart = 10, progressSpan = 80) {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const contentType = res.headers.get("content-type") || "";
+          const totalHeader = res.headers.get("content-length");
+          const total = totalHeader ? parseInt(totalHeader) : 0;
+          if (!res.body || !total) {
+            const blob = await res.blob();
+            this.progress = progressStart + progressSpan;
+            return contentType ? new Blob([blob], { type: contentType }) : blob;
+          }
+          const reader = res.body.getReader();
+          const chunks = [];
+          let received = 0;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            received += value.length;
+            this.progress = progressStart + (received / total) * progressSpan;
+          }
+          return new Blob(chunks, { type: contentType });
+        },
+
+        cleanupBlobUrls() {
+          for (const k of ["downloadLink", "subtitleUrl"]) {
+            if (this[k] && this[k].startsWith("blob:")) URL.revokeObjectURL(this[k]);
+          }
+        },
+        resetState() {
+          this.cleanupBlobUrls();
+          this.status = "";
+          this.progress = 0;
+          this.progressBarVisible = false;
+          this.videoPreviewVisible = false;
+          this.gifPreviewVisible = false;
+          this.downloadReady = false;
+          this.downloadLink = "";
+          this.subtitleLang = "";
+          this.subtitleUrl = "";
+          this.postCid = "";
+          this.videoSource = null;
+        },
+      },
+    }).mount("#app");
+
+    // ---- Module-scope helpers (no `this`) ----
+
+    // Real TS→MP4 remux using mux.js (no transcoding, no WASM, no SharedArrayBuffer).
+    // Bluesky HLS segments are H.264+AAC inside MPEG-TS — mux.js produces a fragmented MP4
+    // (init segment + media segments) that Android, iOS and modern browsers play natively.
+    function tsBlobToMp4WithMuxjs(tsBlob) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          if (typeof muxjs === "undefined" || !muxjs.mp4 || !muxjs.mp4.Transmuxer) {
+            return reject(new Error("mux.js not loaded"));
+          }
+          const bytes = new Uint8Array(await tsBlob.arrayBuffer());
+          const transmuxer = new muxjs.mp4.Transmuxer({ keepOriginalTimestamps: false });
+          const parts = [];
+          let initPushed = false;
+          transmuxer.on("data", (segment) => {
+            if (!initPushed && segment.initSegment) {
+              parts.push(segment.initSegment);
+              initPushed = true;
+            }
+            if (segment.data) parts.push(segment.data);
+          });
+          transmuxer.on("done", () => {
+            if (!parts.length) return reject(new Error("mux.js produced no output"));
+            resolve(new Blob(parts, { type: "video/mp4" }));
+          });
+          transmuxer.push(bytes);
+          transmuxer.flush();
+        } catch (err) {
+          reject(err);
+        }
+      });
+    }
+
+    function extensionFromMime(mime) {
+      if (!mime) return null;
+      const m = mime.split(";")[0].trim().toLowerCase();
+      const map = {
+        "video/mp4": "mp4",
+        "video/quicktime": "mov",
+        "video/webm": "webm",
+        "video/mpeg": "mpg",
+        "video/x-matroska": "mkv",
+        "video/mp2t": "ts",
+        "image/gif": "gif",
+      };
+      return map[m] || null;
+    }
+    function triggerDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    }
+  </script>
+</body>
+</html>
