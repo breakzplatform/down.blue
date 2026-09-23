@@ -1,0 +1,67 @@
+:root{
+/* ---- the canon: Netscape / IE defaults, untouched ---- */
+--paper:#FFFFFF;
+--black:#000000;
+--link:#0000EE;
+--link-visited:#551A8B;
+--link-active:#EE0000;
+--netscape-gray:#C0C0C0;
+
+/* ---- neutrals ---- */
+--gray-90:#1A1A1A;
+--gray-70:#333333;
+--gray-50:#767676;
+--gray-30:#C0C0C0;
+--gray-15:#E5E5E5;
+--gray-06:#F5F5F5;
+
+/* ---- the inks: 16 named project colours (web-2.0 era, saturated, flat) ----
+   A project picks ONE and assigns it to --project-ink. The site itself stays on
+   --ink-blue, the canonical link colour. --on-<name> is the text colour that is
+   legible ON that ink: light inks take black, dark inks take white. */
+--ink-blue:#0000EE;      --on-blue:#FFFFFF;
+--ink-sky:#0095DA;       --on-sky:#FFFFFF;
+--ink-cyan:#00B7C3;      --on-cyan:#000000;
+--ink-teal:#009E8F;      --on-teal:#FFFFFF;
+--ink-green:#00A550;     --on-green:#FFFFFF;
+--ink-lime:#8DC63F;      --on-lime:#000000;
+--ink-yellow:#FFD500;    --on-yellow:#000000;
+--ink-amber:#FFAA00;     --on-amber:#000000;
+--ink-orange:#FF7D00;    --on-orange:#000000;
+--ink-red:#EE0000;       --on-red:#FFFFFF;
+--ink-pink:#FF0084;      --on-pink:#FFFFFF;
+--ink-magenta:#D6008F;   --on-magenta:#FFFFFF;
+--ink-violet:#551A8B;    --on-violet:#FFFFFF;
+--ink-purple:#7B2FF2;    --on-purple:#FFFFFF;
+--ink-brown:#8B5A2B;     --on-brown:#FFFFFF;
+--ink-graphite:#2B2B2B;  --on-graphite:#FFFFFF;
+
+/* ---- semantic aliases ---- */
+--text-1:var(--black);
+--text-2:var(--gray-70);
+--text-3:var(--gray-50);
+--text-inverse:var(--paper);
+--surface-page:var(--paper);
+--surface-sunken:var(--gray-06);
+--surface-fill:var(--gray-15);
+--surface-card:var(--paper);
+--border-strong:var(--black);
+--border-hairline:var(--gray-15);
+--border-dotted:var(--gray-50);
+--rule-heavy:var(--black);
+--focus-ring:var(--link);
+--selection-bg:var(--link);
+--selection-fg:var(--paper);
+
+/* Per-project accent. A project view redefines this pair and nothing else;
+   the site itself leaves it at the canonical link blue.
+   Pair them: --project-ink:var(--ink-lime); --project-ink-contrast:var(--on-lime); */
+--project-ink:var(--ink-blue);
+--project-ink-contrast:var(--on-blue);
+
+/* ---- status ---- */
+--status-ok:#2E7D0E;
+--status-warn:var(--ink-orange);
+--status-error:var(--ink-red);
+--halftone-dot:var(--black);
+}

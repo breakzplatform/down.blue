@@ -1,0 +1,37 @@
+:root{
+/* 1996 has no rounded corners and no blur — neobrutalism keeps both rules and
+   adds weight: thicker ink, and a hard offset shadow instead of a soft one. */
+--radius:0;
+--radius-sm:0;
+
+/* ---- ink weight ---- */
+--border-width:2px;
+--border-width-hair:1px;
+--border-width-heavy:3px;
+--border:2px solid var(--border-strong);
+--border-heavy:3px solid var(--border-strong);
+--border-hair:1px solid var(--border-hairline);
+--border-dot:1px dotted var(--border-dotted);
+--rule:3px solid var(--rule-heavy);
+
+/* ---- hard shadows: offset, opaque, never blurred ----
+   --shadow-color follows --black, so it is ink-black on paper and amber
+   phosphor in the manual dark theme. Never use more than one step per view. */
+--shadow-color:var(--black);
+--shadow-none:none;
+--shadow-1:3px 3px 0 var(--shadow-color);  /* chips, inputs, small controls */
+--shadow-2:5px 5px 0 var(--shadow-color);  /* buttons, panels, cards */
+--shadow-3:8px 8px 0 var(--shadow-color);  /* hover lift, dialogs, hero blocks */
+--shadow-hard:var(--shadow-1);             /* legacy alias */
+
+/* ---- press mechanics ---- */
+--press-offset:2px; /* @kind other */
+
+--underline-offset:0.12em;
+--underline-thickness:2px;
+--halftone-cell:5px;
+--halftone-dot-size:42%;
+--motion-fast:70ms; /* @kind other */
+--motion-base:110ms; /* @kind other */
+--easing:cubic-bezier(.2,.8,.2,1); /* @kind other */
+}

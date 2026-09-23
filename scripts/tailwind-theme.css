@@ -1,0 +1,142 @@
+/* ---------------------------------------------------------------------------
+   joseli.to — Tailwind CSS v4 bridge.
+
+   This file carries NO token values. It only hands the design system's own
+   variables to Tailwind's utility generator, so when `tokens/` changes the
+   utilities follow automatically and there is nothing here to go stale. An
+   earlier version of this bridge inlined every token; the neobrutalist base
+   landed and the copy silently kept shipping 1px borders and no shadows. Do not
+   reintroduce values into this file.
+
+   Input CSS compiled by @tailwindcss/cli — the token files first, this second:
+
+       @import "tailwindcss";
+       @import "../tokens/fonts.css";
+       @import "../tokens/colors.css";
+       @import "../tokens/typography.css";
+       @import "../tokens/spacing.css";
+       @import "../tokens/borders.css";
+       @import "../tokens/neo.css";
+       @import "../tokens/dark.css";
+       @import "../tokens/base.css";
+       @import "./theme.css";
+       @source "../index.html";
+
+       :root { --project-ink: var(--ink-cyan); --project-ink-contrast: var(--on-cyan); }
+
+   Two things to know. `tokens/base.css` must come after Tailwind's preflight, so
+   keep it in that order. And `tokens/dark.css` reasserts `--project-ink`, so a
+   project that picks an ink has to restate it under `[data-theme="dark"]` too,
+   after these imports, or the dark theme silently reverts it to blue.
+
+   Tailwind's stock colour, radius and shadow palettes are reset to `initial`.
+   There is no `bg-slate-50`, no `rounded-lg`, no `shadow-md` in this brand — a
+   utility that silently does nothing is the system telling you the value does
+   not exist. Radius is 0 everywhere; the only shadows are the three hard offset
+   steps, and they are never blurred, never grey, never translucent.
+
+   Utilities are theme-aware for free: every `--color-*` entry points at a DS
+   variable that `dark.css` redefines, so `bg-surface-card` flips to black and
+   `text-text-1` to amber the moment `data-theme="dark"` lands on `<html>`.
+   Nothing needs a `dark:` variant.
+   --------------------------------------------------------------------------- */
+
+@theme static {
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --tracking-*: initial;
+  --leading-*: initial;
+
+  /* canon */
+  --color-paper: var(--paper);
+  --color-canon-black: var(--black);
+  --color-link: var(--link);
+  --color-link-visited: var(--link-visited);
+  --color-link-active: var(--link-active);
+  --color-netscape-gray: var(--netscape-gray);
+
+  /* neutrals */
+  --color-gray-90: var(--gray-90);
+  --color-gray-70: var(--gray-70);
+  --color-gray-50: var(--gray-50);
+  --color-gray-30: var(--gray-30);
+  --color-gray-15: var(--gray-15);
+  --color-gray-06: var(--gray-06);
+
+  /* the sixteen inks and their legible partners */
+  --color-ink-blue: var(--ink-blue);          --color-on-blue: var(--on-blue);
+  --color-ink-sky: var(--ink-sky);            --color-on-sky: var(--on-sky);
+  --color-ink-cyan: var(--ink-cyan);          --color-on-cyan: var(--on-cyan);
+  --color-ink-teal: var(--ink-teal);          --color-on-teal: var(--on-teal);
+  --color-ink-green: var(--ink-green);        --color-on-green: var(--on-green);
+  --color-ink-lime: var(--ink-lime);          --color-on-lime: var(--on-lime);
+  --color-ink-yellow: var(--ink-yellow);      --color-on-yellow: var(--on-yellow);
+  --color-ink-amber: var(--ink-amber);        --color-on-amber: var(--on-amber);
+  --color-ink-orange: var(--ink-orange);      --color-on-orange: var(--on-orange);
+  --color-ink-red: var(--ink-red);            --color-on-red: var(--on-red);
+  --color-ink-pink: var(--ink-pink);          --color-on-pink: var(--on-pink);
+  --color-ink-magenta: var(--ink-magenta);    --color-on-magenta: var(--on-magenta);
+  --color-ink-violet: var(--ink-violet);      --color-on-violet: var(--on-violet);
+  --color-ink-purple: var(--ink-purple);      --color-on-purple: var(--on-purple);
+  --color-ink-brown: var(--ink-brown);        --color-on-brown: var(--on-brown);
+  --color-ink-graphite: var(--ink-graphite);  --color-on-graphite: var(--on-graphite);
+
+  /* semantic — what markup should reach for */
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-text-inverse: var(--text-inverse);
+  --color-surface-page: var(--surface-page);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-fill: var(--surface-fill);
+  --color-surface-card: var(--surface-card);
+  --color-strong: var(--border-strong);
+  --color-hairline: var(--border-hairline);
+  --color-dotted: var(--border-dotted);
+  --color-project-ink: var(--project-ink);
+  --color-project-ink-contrast: var(--project-ink-contrast);
+  --color-status-ok: var(--status-ok);
+  --color-status-warn: var(--status-warn);
+  --color-status-error: var(--status-error);
+
+  /* type */
+  --font-display: var(--font-display);
+  --font-display-sans: var(--font-display-sans);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+  --font-serif-reading: var(--font-serif-reading);
+  --default-font-family: var(--font-body);
+  --default-mono-font-family: var(--font-mono);
+
+  --text-display-1: var(--text-display-1);
+  --text-display-2: var(--text-display-2);
+  --text-display-3: var(--text-display-3);
+  --text-display-4: var(--text-display-4);
+  --text-title: var(--text-title);
+  --text-title-sm: var(--text-title-sm);
+  --text-body: var(--text-body);
+  --text-body-sm: var(--text-body-sm);
+  --text-caption: var(--text-caption);
+  --text-meta: var(--text-meta);
+  --text-micro: var(--text-micro);
+
+  --leading-display: var(--leading-display);
+  --leading-title: var(--leading-title);
+  --leading-body: var(--leading-body);
+  --leading-reading: var(--leading-reading);
+
+  --tracking-display: var(--tracking-display);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-meta: var(--tracking-meta);
+  --tracking-micro: var(--tracking-micro);
+
+  /* The three hard steps, as `shadow-1` / `shadow-2` / `shadow-3`. Radius stays
+     absent on purpose: `rounded-*` generating nothing is the point. */
+  --radius-none: 0;
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
+}

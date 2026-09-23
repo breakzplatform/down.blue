@@ -1,0 +1,47 @@
+:root{
+/* Computer Modern all the way down: CMU Serif for display, numerals and the
+   wordmark; CMU Sans Serif for everything you actually read; CM Typewriter for
+   meta, code and labels. system-ui is the fallback, not the default. */
+--font-display:"CMU Serif","Latin Modern Roman","Computer Modern Serif",Georgia,"Times New Roman",serif;
+--font-display-sans:"CMU Sans Serif","Latin Modern Sans",system-ui,sans-serif;
+--font-body:"CMU Sans Serif","Latin Modern Sans",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+--font-mono:"CMU Typewriter Text",ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+--font-serif-reading:"CMU Serif",Georgia,"Times New Roman",serif;
+
+--text-display-1:52px;
+--text-display-2:40px;
+--text-display-3:34px;
+--text-display-4:26px;
+--text-title:19px;
+--text-title-sm:17px;
+--text-body:15px;
+--text-body-sm:13.5px;
+--text-caption:12.5px;
+--text-meta:11.5px;
+--text-micro:10.5px;
+
+--leading-display:1.05;
+--leading-title:1.3;
+--leading-body:1.55;
+--leading-reading:1.65;
+
+--weight-normal:400;
+--weight-semibold:600;
+--weight-bold:700;
+
+--tracking-display:-0.015em;
+--tracking-normal:0;
+--tracking-meta:0.08em;
+--tracking-micro:0.11em;
+
+/* composed roles */
+--type-wordmark:var(--weight-normal) 34px/1 var(--font-display);
+--type-display:var(--weight-normal) var(--text-display-2)/var(--leading-display) var(--font-display);
+--type-rank:var(--weight-normal) var(--text-display-4)/1 var(--font-display);
+--type-title:var(--weight-semibold) var(--text-title-sm)/var(--leading-title) var(--font-body);
+--type-body:var(--weight-normal) var(--text-body)/var(--leading-body) var(--font-body);
+--type-dek:var(--weight-normal) var(--text-body-sm)/1.5 var(--font-body);
+--type-meta:var(--weight-normal) var(--text-meta)/1.4 var(--font-mono);
+--type-label:var(--weight-normal) var(--text-micro)/1 var(--font-mono);
+--type-code:var(--weight-normal) var(--text-caption)/1.5 var(--font-mono);
+}

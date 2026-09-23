@@ -1,0 +1,15 @@
+{
+  "name": "down-blue",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Static single-page Bluesky video downloader. No bundler: npm exists here only to pin the Tailwind CLI that compiles assets/tailwind-<version>.css.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build:css": "./build-css.sh",
+    "serve": "pnpm dlx http-server . -p 8080 -c-1"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "tailwindcss": "4.3.3"
+  }
+}

@@ -1,0 +1,80 @@
+/* ---------------------------------------------------------------------------
+   DARK MODE IS MANUAL / OPT-IN ONLY.
+   It applies if and only if the document carries data-theme="dark":
+
+       <html data-theme="dark">        or   el.dataset.theme = 'dark'
+
+   There is deliberately NO `@media (prefers-color-scheme: dark)` rule anywhere in
+   this system, and no automatic switching. Light is the default in every context,
+   on every surface, regardless of the reader's OS setting. Use dark only when the
+   subject calls for it — a terminal, a code walkthrough, a hand-made/manual
+   context, the `npx joselito` card, one slide inside a light deck.
+   To go back, remove the attribute (or set data-theme="light").
+
+   The theme is a monochrome CRT: amber phosphor on black — not an inverted page.
+   --------------------------------------------------------------------------- */
+:root[data-theme="dark"]{
+--paper:#000000;
+--black:#FFB000;
+--link:#FFD54A;
+--link-visited:#C0873A;
+--link-active:#FF6A00;
+--netscape-gray:#4A3609;
+
+--gray-90:#FFB000;
+--gray-70:#E0A11A;
+--gray-50:#A9761A;
+--gray-30:#6B4C0E;
+--gray-15:#3A2907;
+--gray-06:#140E02;
+
+/* The 16 inks, retuned for black paper: lifted in value, dropped in saturation
+   so they read next to amber without vibrating. --on-* flips to black almost
+   everywhere, because on black paper every ink is now a light ink. */
+--ink-blue:#6E9BFF;      --on-blue:#000000;
+--ink-sky:#4FC3F7;       --on-sky:#000000;
+--ink-cyan:#4FE0E8;      --on-cyan:#000000;
+--ink-teal:#3FC9B6;      --on-teal:#000000;
+--ink-green:#4FD07A;     --on-green:#000000;
+--ink-lime:#B4E36A;      --on-lime:#000000;
+--ink-yellow:#FFD500;    --on-yellow:#000000;
+--ink-amber:#FFB000;     --on-amber:#000000;
+--ink-orange:#FF9F45;    --on-orange:#000000;
+--ink-red:#FF6A5A;       --on-red:#000000;
+--ink-pink:#FF7AB8;      --on-pink:#000000;
+--ink-magenta:#EE6ABE;   --on-magenta:#000000;
+--ink-violet:#B18AE0;    --on-violet:#000000;
+--ink-purple:#A97CFF;    --on-purple:#000000;
+--ink-brown:#C08A5A;     --on-brown:#000000;
+--ink-graphite:#9A9A9A;  --on-graphite:#000000;
+
+--text-1:#FFB000;
+--text-2:#D89A18;
+--text-3:#A9761A;
+--text-inverse:#000000;
+--surface-page:#000000;
+--surface-sunken:#0D0B06;
+--surface-fill:#1C1503;
+--surface-card:#000000;
+--border-strong:#FFB000;
+--border-hairline:#3A2907;
+--border-dotted:#6B4C0E;
+--rule-heavy:#FFB000;
+
+/* The hard shadow cannot be darker than the paper here — the paper is already
+   pure black. Left following --black it comes out at full amber, identical in
+   value to the border it sits behind, so the block reads as a glow or a double
+   outline instead of as something raised. Dimming it is the only move the
+   medium allows: same hue, lower value, so the lit edge stays #FFB000 and the
+   mass behind it recedes. Bright enough to survive the 3px step on chips. */
+--shadow-color:var(--gray-50);
+--halftone-dot:#FFB000;
+
+/* A project keeps its identity in dark mode: --project-ink still points at the
+   same named ink, which now resolves to its dark variant. */
+--project-ink:var(--ink-blue);
+--project-ink-contrast:var(--on-blue);
+--status-ok:#8DC63F;
+--status-warn:#FFB000;
+--status-error:#FF6A5A;
+}

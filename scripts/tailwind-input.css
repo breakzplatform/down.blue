@@ -1,0 +1,49 @@
+/* Tailwind v4 entry point for down.blue. Compiled by scripts/build-css.sh into
+   assets/tailwind-<versão>.css — the only stylesheet index.html links.
+
+   scripts/ds/ is a verbatim copy of the joseli.to design system (skill
+   `joseli-to-ds`): never edit it here, replace the directory. The token files
+   are imported individually rather than through ds/styles.css so Tailwind's
+   bundler inlines them; base.css comes last because it has to win over
+   Tailwind's preflight. */
+/* source(none) desliga a detecção automática de fontes do v4. Sem isso o
+   Tailwind varre o diretório do arquivo de entrada e trata os próprios CSS
+   (os tokens vendorizados, e o CSS compilado da build anterior) como
+   conteúdo, extraindo "classes" de dentro deles. O @source abaixo passa a
+   ser a única fonte de verdade. */
+@import "tailwindcss" source(none);
+
+@import "./ds/tokens/fonts.css";
+@import "./ds/tokens/colors.css";
+@import "./ds/tokens/typography.css";
+@import "./ds/tokens/spacing.css";
+@import "./ds/tokens/borders.css";
+@import "./ds/tokens/neo.css";
+@import "./ds/tokens/dark.css";
+@import "./ds/tokens/base.css";
+
+@import "./tailwind-theme.css";
+
+@source "../index.html";
+
+/* down.blue runs on its own teal rather than one of the design system's
+   sixteen. It is a dark ink, so every surface painted with it takes white text
+   — 4.65:1, against 4.51:1 for black, so white is both the system's convention
+   for dark inks and the more legible of the two. */
+:root {
+  --ink-down: #018281;
+  --on-down: #FFFFFF;
+  --project-ink: var(--ink-down);
+  --project-ink-contrast: var(--on-down);
+}
+
+/* Two separate jobs in one block. ds/tokens/dark.css reasserts --project-ink as
+   blue, so it has to be restated here or the dark theme reverts it. And the ink
+   itself becomes the theme's amber: dark mode is a monochrome CRT, and one
+   colour arriving from the light theme is the thing that breaks it. */
+:root[data-theme="dark"] {
+  --ink-down: var(--ink-amber);
+  --on-down: var(--on-amber);
+  --project-ink: var(--ink-down);
+  --project-ink-contrast: var(--on-down);
+}

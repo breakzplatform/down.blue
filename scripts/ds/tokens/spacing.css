@@ -1,0 +1,29 @@
+:root{
+--space-0:0;
+--space-1:2px;
+--space-2:4px;
+--space-3:6px;
+--space-4:8px;
+--space-5:10px;
+--space-6:14px;
+--space-7:18px;
+--space-8:24px;
+--space-9:28px;
+--space-10:36px;
+--space-11:44px;
+--space-12:64px;
+
+/* layout */
+--measure-reading:66ch;
+--measure-dek:52ch;
+--page-max:880px;
+--page-max-wide:1080px;
+--page-pad-x:24px;
+--page-pad-top:28px;
+--page-pad-bottom:64px;
+--rail-width:232px;
+--column-gap:36px;
+--feed-row-y:14px;
+--box-pad:10px 9px;
+--box-head-pad:7px 9px;
+}

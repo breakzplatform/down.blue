@@ -1,0 +1,25 @@
+/* ---------------------------------------------------------------------------
+   Neobrutalist surface layer.
+   Three classes carry the whole language, so a consumer never hand-rolls the
+   shadow maths. Compose them: class="neo neo-press".
+
+     .neo        a block: 2px ink border, hard 5px offset shadow, flat fill
+     .neo-sm/lg  same block at the small (3px) or large (8px) shadow step
+     .neo-press  interactive: lifts away from the shadow on hover, then slams
+                 flat into it on press. Use on buttons and links-as-blocks.
+     .neo-lift   hover lift with no press state. Use on cards and tiles.
+
+   Rules of the layer: one shadow step per view, never two nested blocks that
+   both cast, and never a shadow on something that cannot be touched or read as
+   raised (body text, table rows, hairline dividers).
+   --------------------------------------------------------------------------- */
+.neo{border:var(--border);box-shadow:var(--shadow-2);background:var(--surface-card);border-radius:0}
+.neo-sm{box-shadow:var(--shadow-1)}
+.neo-lg{box-shadow:var(--shadow-3)}
+.neo-flat{box-shadow:none}
+.neo-press,.neo-lift{transition:transform var(--motion-fast) var(--easing),box-shadow var(--motion-fast) var(--easing)}
+.neo-press:hover,.neo-lift:hover{transform:translate(calc(var(--press-offset) * -1),calc(var(--press-offset) * -1));box-shadow:var(--shadow-3)}
+.neo-press:active{transform:translate(var(--press-offset),var(--press-offset));box-shadow:var(--shadow-none)}
+.neo-press:disabled,.neo-press[aria-disabled="true"]{transform:none;box-shadow:var(--shadow-1)}
+.neo-press.neo-sm:hover,.neo-lift.neo-sm:hover{box-shadow:var(--shadow-2)}
+@media (prefers-reduced-motion:reduce){.neo-press,.neo-lift{transition:none}.neo-press:hover,.neo-lift:hover{transform:none}}
