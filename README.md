@@ -105,7 +105,7 @@ Headers live in two places. `<meta http-equiv>` has partial browser support; `_h
 
 No SRI on the vendored scripts, and no version marker inside them, which makes a supply-chain audit awkward.
 
-`urlHistory` grows without a cap. No `robots.txt`, `sitemap.xml` or canonical URL. `og:image` points at a fixed domain, which breaks previews on forks and staging.
+`urlHistory` grows without a cap. No `robots.txt` or `sitemap.xml`. The canonical URL and `og:image` point at `https://down.blue`, which breaks previews on forks and staging. The preview image is generated: edit `scripts/og.html` and run `./scripts/build-og.sh`.
 
 `isWebCodecsSupported()` exists but the native fast path looks incomplete, and everything falls back to ffmpeg anyway.
 

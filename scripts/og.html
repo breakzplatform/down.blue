@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<!-- Source for og.png. Render at 1200x630 with scripts/build-og.sh. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="../assets/tailwind-4.3.3.css" />
+  <style>
+    html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: var(--surface-page); }
+    .frame {
+      box-sizing: border-box; width: 1200px; height: 630px; padding: 56px;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 40px;
+    }
+    .wordmark {
+      margin: 0;
+      font: var(--weight-normal) 200px/1.1 var(--font-display);
+      letter-spacing: var(--tracking-display);
+      color: var(--text-1);
+    }
+    .wordmark-suffix {
+      display: inline-block; line-height: 0.92; padding: 0.06em 0.07em 0.1em;
+      background: var(--project-ink); color: var(--project-ink-contrast);
+    }
+    .tagline {
+      margin: 0; padding: 14px 22px;
+      border: var(--border); background: var(--surface-card); box-shadow: var(--shadow-2);
+      font: var(--weight-bold) 28px/1.3 var(--font-mono);
+      letter-spacing: var(--tracking-meta); text-transform: uppercase; color: var(--text-1);
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <h1 class="wordmark">down<span class="wordmark-suffix">.blue</span></h1>
+    <p class="tagline">A Bluesky (and Atmosphere) video downloader</p>
+  </div>
+</body>
+</html>
