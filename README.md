@@ -34,14 +34,14 @@ A conversão usa o `@ffmpeg/core` **single-thread**, que **não exige** `SharedA
 ├── assets/
 │   ├── tailwind-4.3.3.css              # CSS compilado (artefato gerado, não vendorizado)
 │                                       # (fontes vêm de static.joseli.to, não versionadas)
-├── package.json                        # pina só o Tailwind CLI (o site não usa npm)
-├── pnpm-lock.yaml                      # 66 pacotes travados por integridade (pnpm)
-├── scripts/
+├── LICENSE                             # MIT
+├── scripts/                            # nada aqui vai ao ar (podado no deploy)
+│   ├── package.json                    # pina só o Tailwind CLI (o site não usa npm)
+│   ├── pnpm-lock.yaml                  # 66 pacotes travados por integridade (pnpm)
 │   ├── build-css.sh                    # regera assets/tailwind-*.css via Tailwind CLI
 │   ├── tailwind-input.css              # entrada do build: importa o Tailwind e o tema
 │   ├── tailwind-theme.css              # ponte Tailwind v4 (só @theme, sem valores)
 │   └── ds/                             # cópia literal do design system joseli.to
-└── supporters/                         # logos de apoiadores
 ```
 
 ## Rodando localmente
@@ -57,12 +57,13 @@ Ou faça deploy no Netlify / Cloudflare Pages, que já leem o `_headers`.
 ## Deploy
 
 - **Netlify** (produção atual) **/ Cloudflare Pages**: o arquivo `_headers` cuida dos cabeçalhos COOP/COEP.
-- `netlify.toml` faz um *prune* no deploy: `scripts/` e `index.html.bak` ficam no repo mas **não vão ao ar**. Para excluir mais arquivos do site público, adicione-os ao `rm -rf` do `command`.
+- `netlify.toml` faz um *prune* no deploy: `scripts/`, o próprio `netlify.toml` e o `.gitignore` **não vão ao ar**. Para excluir mais arquivos, acrescente ao `rm -rf` do `command`.
+- **Todo o metadado npm mora em `scripts/`** de propósito: o Netlify decide se roda instalação de dependências procurando um `package.json` na raiz do site. Mantendo fora da raiz, o deploy não instala nada.
 - Sem bundler. O único passo de build é o `./scripts/build-css.sh` (rodado localmente, manual); o `netlify.toml` não compila nada, só remove arquivos.
 
 ## Falhas atuais e dívida técnica
 
-- **Sem `LICENSE`, CI ou testes.** Nada documenta contribuições ou licenciamento. (`package.json`, `pnpm-lock.yaml` e `.gitignore` já existem — o lockfile do pnpm trava as 66 dependências do Tailwind CLI por integridade.)
+- **Sem CI nem testes.** Nada valida uma mudança antes do deploy.
 - **Sem build/bundler.** `index.html` carrega Vue e ffmpeg via `<script>` síncrono — sem minificação do código da app, sem code-splitting, sem tree-shaking. (Tailwind já é CSS compilado estático — `assets/tailwind-4.3.3.css`; regerar com `./scripts/build-css.sh` sempre que mudar classes no `index.html` ou o design system em `scripts/ds/` for substituído.)
 - **Tudo num arquivo só.** Marcação, estilo, dados, métodos e parsers HLS misturados. Difícil revisar e impossível testar unitariamente sem extrair.
 - **A página inteira é Computer Modern, inclusive o corpo** — cinco faces, ~856 KB, servidas de `static.joseli.to` com `font-display: swap`, então não bloqueiam a primeira pintura. Um subset dos glifos realmente usados cortaria a maior parte disso, mas a otimização é do host de assets, não deste repo.
@@ -72,7 +73,6 @@ Ou faça deploy no Netlify / Cloudflare Pages, que já leem o `_headers`.
 - **Cálculo de progresso suspeito**: `parseInt((ratio * 100).toFixed(2) / 2) + 50` mistura string e número e não cobre os 0–50% do download (só o lado do ffmpeg).
 - **Tratamento de erro genérico.** Mensagens "Please try again" sem distinguir CORS, 404, post privado, vídeo apagado, rate limit, etc.
 - **`localStorage` sem limite.** `urlHistory` cresce indefinidamente; sem cap nem rotação.
-- **Sem i18n.** Audiência majoritariamente PT-BR, UI 100% em inglês.
 - **Acessibilidade não revisada.** Faltam `alt` em ícones, `aria-live` no status de progresso, foco visível em botões custom.
 - **Sem `robots.txt`/`sitemap.xml`/canonical.**
 - **`og:image` aponta para domínio fixo** (`downloader.notx.blue/share.png`) — quebra previews em forks/ambientes de staging.
@@ -85,7 +85,7 @@ Ou faça deploy no Netlify / Cloudflare Pages, que já leem o `_headers`.
 
 Em ordem aproximada de retorno-sobre-esforço:
 
-1. **Adicionar `LICENSE` (MIT/Apache-2.0).** As libs vendorizadas em `lib/` continuam pinadas só pelo nome do arquivo, sem registro de integridade — diferente do Tailwind, que agora tem lockfile.
+1. **SRI ou lockfile para `lib/`.** As libs vendorizadas continuam pinadas só pelo nome do arquivo, sem registro de integridade — diferente do Tailwind, que já tem lockfile.
 2. **Migrar para Vite** + extrair `index.html` em módulos: `app.js`, `bsky.js` (API), `hls.js` (parser de playlist), `ffmpeg.js`, `history.js`. Fica testável e reduz o HTML servido. Também habilitaria o `@ffmpeg/core` **multi-thread** de forma confiável (ESM + bundler), recuperando a velocidade de conversão para vídeos longos.
 
 > Já feitos: migração do ffmpeg.wasm para 0.12.7 (API de classe `FFmpeg`, core single-thread — sem dependência de SharedArrayBuffer/COOP-COEP); Vue 3.5.34; Tailwind agora é CSS compilado estático (sem Play CDN, sem warning, ~390KB a menos de JS bloqueante); `@ffmpeg/util` substituído por `fetchFile` inline; remoção do `indexo.php` (produção é Netlify); versão no nome dos arquivos vendorizados (exceto `814.ffmpeg.js`); redesign na identidade [joseli.to](https://joseli.to) sobre Tailwind 4 (tokens do design system expostos como utilitários via `@theme`, tinta própria `#018281`, logotipo em texto, modo escuro âmbar opt-in, contraste auditado em AA nos dois temas).

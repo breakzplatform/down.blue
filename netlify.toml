@@ -3,4 +3,4 @@
 # (they stay in the Git repo, they just don't ship to the CDN).
 [build]
   publish = "."
-  command = "rm -rf scripts"
+  command = "rm -rf scripts netlify.toml .gitignore"
