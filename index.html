@@ -925,8 +925,9 @@
                 return classifyExternal(embed.media.external.uri);
               }
               // Images or other media beside the quote. The video may be on the quoted post.
+              // The API omits `$type` on this nested record view, so restore it.
               if (embed.record) {
-                const found = walk(embed.record, did);
+                const found = walk({ ...embed.record, $type: "app.bsky.embed.record#view" }, did);
                 if (found) return found;
               }
             }
