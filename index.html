@@ -215,11 +215,6 @@
 
 <body>
   <div id="app">
-    <p class="db-micro border-b border-strong px-6 py-2 text-center text-text-2">
-      {{ t.bannerPrefix }}
-      <a href="https://share.notx.blue/" target="_blank" rel="noopener">{{ t.bannerExt }}</a>{{ t.bannerSuffix }}
-    </p>
-
     <div class="mx-auto max-w-[880px] px-6 pb-16">
       <div class="flex flex-wrap items-center justify-end gap-2 pt-4">
         <button @click="toggleLang" class="db-btn db-btn-sm neo-press neo-sm">{{ lang === 'pt' ? 'english' : 'português' }}</button>
@@ -239,14 +234,6 @@
       </div>
 
       <h1 class="db-wordmark">down<span class="db-wordmark-suffix">.blue</span></h1>
-
-      <p class="db-meta mb-5 text-center">
-        {{ t.tagline }} ·
-        <a href="https://tally.so/r/wgQLp1" target="_blank" rel="noopener">{{ t.foundBug }}</a> ·
-        {{ t.partOf }} <a href="https://notx.blue">notx.blue</a> {{ t.byAuthor }}
-        <a href="https://bsky.app/profile/joseli.to">@joseli.to</a> ·
-        <a href="https://github.com/breakzplatform/downloader.notx.blue">{{ t.viewSource }}</a>
-      </p>
 
       <section class="db-panel mt-9 mb-6">
         <h2 class="db-panel-head">
@@ -398,11 +385,21 @@
       </aside>
 
       <footer class="pt-6">
+        <p class="db-meta mb-6 text-center">
+          {{ t.tagline }} ·
+          <a href="https://tally.so/r/wgQLp1" target="_blank" rel="noopener">{{ t.foundBug }}</a> ·
+          {{ t.partOf }} <a href="https://notx.blue">notx.blue</a> {{ t.byAuthor }}
+          <a href="https://bsky.app/profile/joseli.to">@joseli.to</a> ·
+          <a href="https://github.com/breakzplatform/downloader.notx.blue">{{ t.viewSource }}</a>
+        </p>
+
         <p class="db-note mb-6 text-center">{{ t.fromBrazil }}</p>
         <div class="mb-6 flex flex-wrap items-center justify-center gap-2">
           <span class="db-micro mr-1 text-text-3">{{ t.support }}</span>
+          <!-- Temporarily hidden support links
           <a href="https://joselito.wiki.br/Apoie" target="_blank" rel="noopener" class="db-chip db-chip-pix neo-press neo-sm">Pix</a>
           <a href="https://apoia.se/joselito" target="_blank" rel="noopener" class="db-chip db-chip-apoiase neo-press neo-sm">APOIA.se</a>
+          -->
           <a href="https://buymeacoffee.com/joselito" target="_blank" rel="noopener" class="db-chip db-chip-coffee neo-press neo-sm">Buy me a Coffee</a>
         </div>
         <p class="db-note text-center">{{ t.respect }}</p>
@@ -437,9 +434,6 @@
 
     const STRINGS = {
       en: {
-        bannerPrefix: "Easily share from ANY website to Bluesky: install the",
-        bannerExt: "Redirect Twitter Share to Bluesky",
-        bannerSuffix: " extension. Available for Chrome and Firefox.",
         tagline: "Work in Progress. Expect bugs",
         foundBug: "found one?",
         partOf: "part of",
@@ -507,9 +501,6 @@
         errConvert: "Conversion failed.",
       },
       pt: {
-        bannerPrefix: "Compartilhe facilmente de QUALQUER site para o Bluesky: instale a extensão",
-        bannerExt: "Redirect Twitter Share to Bluesky",
-        bannerSuffix: ". Disponível para Chrome e Firefox.",
         tagline: "Em desenvolvimento. Bugs acontecem",
         foundBug: "achou um?",
         partOf: "parte do",
