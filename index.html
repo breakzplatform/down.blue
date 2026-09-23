@@ -341,7 +341,7 @@
         <div class="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 lg:grid-cols-3">
           <article v-for="(item, index) in paginatedHistory" :key="getHistoryItemUrl(item) || index"
             class="db-card flex min-w-0 flex-col border border-strong neo-lift neo-sm">
-            <button @click="fillAndFind(item)" :title="t.reopen"
+            <button @click="fillAndFind(item)" :title="t.reopen" :disabled="loadingMode !== null"
               class="db-thumb-btn relative block w-full overflow-hidden border-b border-strong"
               style="aspect-ratio: 16 / 9;">
               <img v-if="getThumbnailUrl(item)" :src="getThumbnailUrl(item)"
@@ -358,9 +358,9 @@
                 {{ getHistoryItemData(item).text }}
               </p>
               <div class="mt-auto flex items-center justify-between gap-2 border-t border-hairline pt-2">
-                <a :href="getHistoryItemUrl(item)" class="db-micro truncate" target="_blank" rel="noopener">{{ t.viewPost }}</a>
+                <a :href="normalizedHistoryUrl(item)" class="db-micro truncate" target="_blank" rel="noopener">{{ t.viewPost }}</a>
                 <div class="flex shrink-0 gap-1">
-                  <button @click="fillAndFind(item)" :title="t.reopen" :aria-label="t.reopen" class="db-btn db-btn-sm neo-press neo-sm">
+                  <button @click="fillAndFind(item)" :title="t.reopen" :aria-label="t.reopen" :disabled="loadingMode !== null" class="db-btn db-btn-sm neo-press neo-sm">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" />
@@ -691,16 +691,26 @@
         // ---- History ----
         loadHistory() {
           const saved = JSON.parse(localStorage.getItem("urlHistory") || "[]");
-          this.urlHistory = saved.slice(0, this.historyMaxEntries).map(item => {
+          const seen = new Set();
+          this.urlHistory = saved.slice(0, this.historyMaxEntries).flatMap(item => {
+            const raw = typeof item === "string" ? item : item && item.url;
+            let safe;
+            try { safe = this.extractProfileAndPost(raw).url; }
+            catch { return []; }
+            if (seen.has(safe)) return [];
+            seen.add(safe);
             if (typeof item === "string") {
-              return { url: item, timestamp: Date.now(), postData: this.extractPostDataFromUrl(item) };
+              return [{ url: safe, timestamp: Date.now(), postData: this.extractPostDataFromUrl(safe) }];
             }
-            return item;
+            return [{ ...item, url: safe }];
           });
         },
         saveToHistory(url, postData = null) {
-          const entry = { url, timestamp: Date.now(), postData: postData || this.extractPostDataFromUrl(url) };
-          const idx = this.urlHistory.findIndex(i => (typeof i === "string" ? i : i.url) === url);
+          let safeUrl;
+          try { safeUrl = this.extractProfileAndPost(url).url; }
+          catch { return; }
+          const entry = { url: safeUrl, timestamp: Date.now(), postData: postData || this.extractPostDataFromUrl(safeUrl) };
+          const idx = this.urlHistory.findIndex(i => (typeof i === "string" ? i : i.url) === safeUrl);
           if (idx !== -1) this.urlHistory.splice(idx, 1);
           this.urlHistory.unshift(entry);
           if (this.urlHistory.length > this.historyMaxEntries) this.urlHistory.length = this.historyMaxEntries;
@@ -737,7 +747,12 @@
           localStorage.setItem("urlHistory", JSON.stringify(this.urlHistory));
         },
         fillAndFind(historyItem) {
-          this.postUrl = typeof historyItem === "string" ? historyItem : historyItem.url;
+          if (this.loadingMode !== null) return;
+          const raw = typeof historyItem === "string" ? historyItem : historyItem && historyItem.url;
+          let parsed;
+          try { parsed = this.extractProfileAndPost(raw); }
+          catch { return; }
+          this.postUrl = parsed.url;
           this.findVideo();
         },
         getHistoryItemUrl(item) {
@@ -801,7 +816,7 @@
               const controller = new AbortController();
               const timeoutId = setTimeout(() => controller.abort(), 10000);
               const res = await fetch(
-                `https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=${encodeURIComponent(`at://${profile}/app.bsky.feed.post/${post}`)}&depth=0`,
+                `https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=${encodeURIComponent(`at://${profile}/app.bsky.feed.post/${post}`)}&depth=0&parentHeight=0`,
                 { signal: controller.signal }
               );
               clearTimeout(timeoutId);
@@ -860,45 +875,79 @@
 
         // ---- URL parsing ----
         extractProfileAndPost(postUrl) {
-          const m = postUrl.match(/profile\/([^\/]+)\/post\/([^\/]+)/);
+          let url;
+          try {
+            url = new URL(String(postUrl ?? "").trim());
+          } catch {
+            throw new Error("Invalid URL");
+          }
+          if (url.protocol !== "https:" || url.hostname !== "bsky.app") {
+            throw new Error("Invalid URL");
+          }
+          const m = url.pathname.match(/^\/profile\/([^/]+)\/post\/([^/]+)\/?$/);
           if (!m) throw new Error("Invalid URL format");
-          return { profile: m[1], post: m[2] };
+          let profile;
+          let post;
+          try {
+            profile = decodeURIComponent(m[1]);
+            post = decodeURIComponent(m[2]);
+          } catch {
+            throw new Error("Invalid URL format");
+          }
+          if (!profile || !post || /[\s/?#]/.test(profile) || /[\s/?#]/.test(post)) {
+            throw new Error("Invalid URL format");
+          }
+          return {
+            profile,
+            post,
+            url: `https://bsky.app/profile/${profile}/post/${post}`,
+          };
+        },
+        // History links bind this, never the stored string. Invalid entries have no href.
+        normalizedHistoryUrl(item) {
+          try { return this.extractProfileAndPost(this.getHistoryItemUrl(item)).url; }
+          catch { return null; }
         },
 
         // ---- Embed extraction (returns full Bluesky video info or fallback URL) ----
         extractVideoInfo(post) {
           const author = post.author || {};
-          const fromVideoView = (e) => ({
+          const fromVideoView = (e, did) => ({
             kind: "bluesky-video",
-            did: author.did,
+            did,
             cid: e.cid,
             playlistUrl: e.playlist,
             alt: e.alt || "",
           });
-          const walk = (embed) => {
+          // `did` is the repo that uploaded this embed. A quote replaces it with
+          // the quoted record's author; the outer post's DID 404s on getBlob.
+          const walk = (embed, did) => {
             if (!embed) return null;
             if (embed["$type"] === "app.bsky.embed.video#view" && embed.playlist && embed.cid) {
-              return fromVideoView(embed);
+              return fromVideoView(embed, did);
             }
             if (embed["$type"] === "app.bsky.embed.recordWithMedia#view" && embed.media) {
               if (embed.media["$type"] === "app.bsky.embed.video#view" && embed.media.playlist && embed.media.cid) {
-                return { kind: "bluesky-video", did: author.did, cid: embed.media.cid, playlistUrl: embed.media.playlist, alt: embed.media.alt || "" };
+                return fromVideoView(embed.media, did);
               }
               if (embed.media["$type"] === "app.bsky.embed.external#view" && embed.media.external?.uri) {
                 return classifyExternal(embed.media.external.uri);
               }
+              // Images or other media beside the quote. The video may be on the quoted post.
+              if (embed.record) {
+                const found = walk(embed.record, did);
+                if (found) return found;
+              }
             }
             if (embed["$type"] === "app.bsky.embed.record#view" && embed.record) {
+              const recordDid = embed.record.author?.did || did;
               if (Array.isArray(embed.record.embeds)) {
                 for (const ne of embed.record.embeds) {
-                  const found = walk(ne);
-                  if (found) {
-                    if (found.kind === "bluesky-video" && !found.did && embed.record.author?.did) found.did = embed.record.author.did;
-                    return found;
-                  }
+                  const found = walk(ne, recordDid);
+                  if (found) return found;
                 }
               }
-              if (embed.record.embed) return walk(embed.record.embed);
+              if (embed.record.embed) return walk(embed.record.embed, recordDid);
             }
             if (embed["$type"] === "app.bsky.embed.external#view" && embed.external?.uri) {
               return classifyExternal(embed.external.uri);
@@ -910,7 +959,7 @@
             const hostname = (() => { try { return new URL(uri).hostname; } catch { return ""; } })();
             return { kind: "external", url: uri, hostname };
           };
-          return walk(post.embed);
+          return walk(post.embed, author.did);
         },
         isGifUrl(url) {
           return url.includes("tenor.com") ||
@@ -919,19 +968,25 @@
         },
 
         // ---- DID resolution → PDS endpoint ----
-        async resolvePds(did) {
+        async resolvePds(did, signal) {
+          const opId = this._opId;
           if (!did) throw new Error("Missing DID");
           if (this.pdsCache[did]) return this.pdsCache[did];
+          const fetchOpts = signal ? { signal } : undefined;
           let doc;
           if (did.startsWith("did:plc:")) {
-            const res = await fetch(`https://plc.directory/${encodeURIComponent(did)}`);
+            const res = await fetch(`https://plc.directory/${encodeURIComponent(did)}`, fetchOpts);
+            this.throwIfStale(opId);
             if (!res.ok) throw new Error(`plc.directory returned ${res.status}`);
             doc = await res.json();
+            this.throwIfStale(opId);
           } else if (did.startsWith("did:web:")) {
             const domain = decodeURIComponent(did.slice("did:web:".length)).split(":")[0];
-            const res = await fetch(`https://${domain}/.well-known/did.json`);
+            const res = await fetch(`https://${domain}/.well-known/did.json`, fetchOpts);
+            this.throwIfStale(opId);
             if (!res.ok) throw new Error(`did.json returned ${res.status}`);
             doc = await res.json();
+            this.throwIfStale(opId);
           } else {
             throw new Error(`Unsupported DID method: ${did}`);
           }
@@ -946,31 +1001,56 @@
           return endpoint;
         },
 
+        // One in-flight find or download. The next call aborts the previous
+        // fetches. Completions no-op unless they still own the id.
+        beginOperation() {
+          if (this._opAbort) this._opAbort.abort();
+          const controller = new AbortController();
+          this._opAbort = controller;
+          this._opId = (this._opId || 0) + 1;
+          const id = this._opId;
+          return { id, signal: controller.signal, abort() { controller.abort(); } };
+        },
+        operationOwns(id) {
+          return id === this._opId;
+        },
+        throwIfStale(id) {
+          if (id !== this._opId) throw new DOMException("The operation was aborted", "AbortError");
+        },
+
         // ---- Main flow: find video metadata only ----
         async findVideo() {
+          if (this.loadingMode !== null) return;
           this.resetState();
-          const postUrl = this.postUrl;
-          if (!postUrl || !postUrl.includes("bsky.app")) {
-            this.status = this.t.errInvalidUrl;
+          let parsed;
+          try {
+            parsed = this.extractProfileAndPost(this.postUrl);
+          } catch (error) {
+            this.status = error.message === "Invalid URL format" ? this.t.errInvalidFormat : this.t.errInvalidUrl;
             return;
           }
+          this.postUrl = parsed.url;
+          const { profile, post } = parsed;
+          const op = this.beginOperation();
           this.loadingMode = "find";
           this.progressBarVisible = true;
           this.progress = 10;
           this.status = this.t.statusValidating;
+          let timeoutId = null;
           try {
-            const { profile, post } = this.extractProfileAndPost(postUrl);
             this.status = this.t.statusLoading;
             this.progress = 25;
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            timeoutId = setTimeout(() => op.abort(), 15000);
             const threadRes = await fetch(
-              `https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=${encodeURIComponent(`at://${profile}/app.bsky.feed.post/${post}`)}&depth=10`,
-              { signal: controller.signal }
+              `https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=${encodeURIComponent(`at://${profile}/app.bsky.feed.post/${post}`)}&depth=0&parentHeight=0`,
+              { signal: op.signal }
             );
             clearTimeout(timeoutId);
+            timeoutId = null;
+            if (!this.operationOwns(op.id)) return;
             if (!threadRes.ok) throw new Error(`Failed to fetch post: ${threadRes.status}`);
             const data = await threadRes.json();
+            if (!this.operationOwns(op.id)) return;
             if (!data.thread?.post) throw new Error("Post not found");
             this.progress = 45;
             this.postCid = data.thread.post.cid;
@@ -995,11 +1075,13 @@
               this.status = this.t.statusResolvingPds;
               this.progress = 80;
               try {
-                info.pds = await this.resolvePds(info.did);
+                info.pds = await this.resolvePds(info.did, op.signal);
               } catch (err) {
+                if (!this.operationOwns(op.id)) return;
                 console.warn("PDS resolution failed; raw mode will be unavailable.", err);
                 info.pds = null;
               }
+              if (!this.operationOwns(op.id)) return;
               info.postId = post;
               this.videoSource = info;
               this.status = "";
@@ -1018,9 +1100,11 @@
               this.handleExternal(info);
             }
           } catch (error) {
+            if (!this.operationOwns(op.id)) return;
             this.handleProcessError(error);
           } finally {
-            this.loadingMode = null;
+            if (timeoutId !== null) clearTimeout(timeoutId);
+            if (this.operationOwns(op.id)) this.loadingMode = null;
           }
         },
 
@@ -1058,11 +1142,13 @@
 
         // ---- Mode 1: original raw blob from PDS ----
         async downloadOriginalRaw() {
+          if (this.loadingMode !== null) return;
           if (!this.videoSource || this.videoSource.kind !== "bluesky-video") return;
           if (!this.videoSource.pds) {
             this.status = this.t.errPdsResolve;
             return;
           }
+          const op = this.beginOperation();
           this.loadingMode = "raw";
           this.progressBarVisible = true;
           this.progress = 10;
@@ -1070,7 +1156,8 @@
           try {
             const { did, cid, postId } = this.videoSource;
             const url = `${this.videoSource.pds}/xrpc/com.atproto.sync.getBlob?did=${encodeURIComponent(did)}&cid=${encodeURIComponent(cid)}`;
-            const blob = await this.fetchBlobWithProgress(url);
+            const blob = await this.fetchBlobWithProgress(url, 10, 80, op.signal);
+            if (!this.operationOwns(op.id)) return;
             const ext = extensionFromMime(blob.type) || "mp4";
             const filename = `video-${postId}.${ext}`;
             triggerDownload(blob, filename);
@@ -1081,35 +1168,43 @@
             this.progressBarVisible = false;
             this.status = "";
           } catch (error) {
+            if (!this.operationOwns(op.id)) return;
             console.error("Raw download failed:", error);
             this.status = this.t.errBlobFetch;
             this.progressBarVisible = false;
           } finally {
-            this.loadingMode = null;
+            if (this.operationOwns(op.id)) this.loadingMode = null;
           }
         },
 
         // ---- Mode 2: original blob → MP4 (no-op if already mp4; otherwise transcode) ----
         async downloadOriginalAsMp4() {
+          if (this.loadingMode !== null) return;
           if (!this.videoSource || this.videoSource.kind !== "bluesky-video") return;
           if (!this.videoSource.pds) {
             this.status = this.t.errPdsResolve;
             return;
           }
+          const op = this.beginOperation();
           this.loadingMode = "originalMp4";
           this.progressBarVisible = true;
           this.progress = 5;
+          let inputName = "";
+          let outputName = "";
           try {
             const { did, cid, postId } = this.videoSource;
             this.status = this.t.statusDownloadingOriginal;
             const url = `${this.videoSource.pds}/xrpc/com.atproto.sync.getBlob?did=${encodeURIComponent(did)}&cid=${encodeURIComponent(cid)}`;
-            const inputBlob = await this.fetchBlobWithProgress(url, 5, 45);
-            const outputName = `video-${postId}.mp4`;
+            const inputBlob = await this.fetchBlobWithProgress(url, 5, 45, op.signal);
+            if (!this.operationOwns(op.id)) return;
+            const downloadName = `video-${postId}.mp4`;
 
             if ((inputBlob.type || "").toLowerCase().startsWith("video/mp4")) {
-              const blob = new Blob([await inputBlob.arrayBuffer()], { type: "video/mp4" });
+              const bytes = await inputBlob.arrayBuffer();
+              if (!this.operationOwns(op.id)) return;
+              const blob = new Blob([bytes], { type: "video/mp4" });
               this.downloadLink = URL.createObjectURL(blob);
-              triggerDownload(blob, outputName);
+              triggerDownload(blob, downloadName);
               this.videoPreviewVisible = true;
               this.downloadReady = true;
               this.progress = 100;
@@ -1120,21 +1215,26 @@
 
             this.status = this.t.statusLoadingFfmpeg;
             await this.ensureFfmpeg();
-            const inputName = `input.${extensionFromMime(inputBlob.type) || "bin"}`;
+            if (!this.operationOwns(op.id)) return;
+            inputName = `input.${extensionFromMime(inputBlob.type) || "bin"}`;
+            outputName = downloadName;
             await this.ffmpeg.writeFile(inputName, await fetchFile(inputBlob));
+            if (!this.operationOwns(op.id)) return;
             this.status = this.t.statusConverting;
             this.progress = 50;
             try {
-              await this.ffmpeg.exec([
+              const code = await this.ffmpeg.exec([
                 "-i", inputName,
                 "-c:v", "copy",
                 "-c:a", "aac",
                 "-movflags", "+faststart",
                 outputName,
               ]);
+              if (code !== 0) throw new Error(`ffmpeg exited ${code}`);
             } catch (e) {
+              if (!this.operationOwns(op.id) || (e && e.name === "AbortError")) throw e;
               console.warn("Copy codec failed; re-encoding video too:", e);
-              await this.ffmpeg.exec([
+              const code = await this.ffmpeg.exec([
                 "-i", inputName,
                 "-c:v", "libx264",
                 "-preset", "fast",
@@ -1143,37 +1243,48 @@
                 "-movflags", "+faststart",
                 outputName,
               ]);
+              if (code !== 0) throw new Error(`ffmpeg exited ${code}`);
             }
+            if (!this.operationOwns(op.id)) return;
             const out = await this.ffmpeg.readFile(outputName);
+            if (!this.operationOwns(op.id)) return;
             const blob = new Blob([out.buffer], { type: "video/mp4" });
-            try { await this.ffmpeg.deleteFile(inputName); } catch {}
-            try { await this.ffmpeg.deleteFile(outputName); } catch {}
             this.downloadLink = URL.createObjectURL(blob);
-            triggerDownload(blob, outputName);
+            triggerDownload(blob, downloadName);
             this.videoPreviewVisible = true;
             this.downloadReady = true;
             this.progress = 100;
             this.progressBarVisible = false;
             this.status = "";
           } catch (error) {
+            if (!this.operationOwns(op.id)) return;
             console.error("Original→MP4 failed:", error);
             this.status = this.t.errConvert;
             this.progressBarVisible = false;
           } finally {
-            this.loadingMode = null;
+            if (inputName) {
+              try { await this.ffmpeg.deleteFile(inputName); } catch {}
+            }
+            if (outputName) {
+              try { await this.ffmpeg.deleteFile(outputName); } catch {}
+            }
+            if (this.operationOwns(op.id)) this.loadingMode = null;
           }
         },
 
         // ---- Mode 3: HLS 720p → MP4 (mux.js remux first, ffmpeg fallback) ----
         async download720pMp4() {
+          if (this.loadingMode !== null) return;
           if (!this.videoSource || this.videoSource.kind !== "bluesky-video") return;
+          const op = this.beginOperation();
           this.loadingMode = "720p";
           this.progressBarVisible = true;
           this.progress = 5;
           this.status = this.t.statusDownloadingHls;
           try {
             const { playlistUrl, postId } = this.videoSource;
-            const tsBlob = await this.processPlaylist(playlistUrl);
+            const tsBlob = await this.processPlaylist(playlistUrl, op.signal);
+            if (!this.operationOwns(op.id)) return;
             const outputName = `video-${postId}-720p.mp4`;
 
             this.status = this.t.statusConverting;
@@ -1182,10 +1293,13 @@
             let mp4Blob = null;
             try {
               mp4Blob = await tsBlobToMp4WithMuxjs(tsBlob);
+              if (!this.operationOwns(op.id)) return;
               console.log("✅ Remuxed TS → MP4 with mux.js (no transcoding)");
             } catch (muxErr) {
+              if (!this.operationOwns(op.id)) return;
               console.warn("mux.js remux failed; falling back to ffmpeg:", muxErr);
               mp4Blob = await this.tsBlobToMp4WithFfmpeg(tsBlob);
+              if (!this.operationOwns(op.id)) return;
             }
 
             this.downloadLink = URL.createObjectURL(mp4Blob);
@@ -1196,41 +1310,52 @@
             this.progressBarVisible = false;
             this.status = "";
           } catch (error) {
+            if (!this.operationOwns(op.id)) return;
             console.error("720p path failed:", error);
             this.status = this.t.errConvert;
             this.progressBarVisible = false;
           } finally {
-            this.loadingMode = null;
+            if (this.operationOwns(op.id)) this.loadingMode = null;
           }
         },
 
         async tsBlobToMp4WithFfmpeg(tsBlob) {
+          const opId = this._opId;
           await this.ensureFfmpeg();
+          this.throwIfStale(opId);
           const inputName = "input.ts";
           const outputName = "out.mp4";
-          await this.ffmpeg.writeFile(inputName, await fetchFile(tsBlob));
           try {
-            await this.ffmpeg.exec([
-              "-i", inputName,
-              "-c:v", "copy", "-c:a", "copy",
-              "-movflags", "+faststart",
-              "-avoid_negative_ts", "make_zero",
-              outputName,
-            ]);
-          } catch (e) {
-            console.warn("ffmpeg copy codec failed; re-encoding:", e);
-            await this.ffmpeg.exec([
-              "-i", inputName,
-              "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-              "-c:a", "aac", "-movflags", "+faststart",
-              outputName,
-            ]);
+            await this.ffmpeg.writeFile(inputName, await fetchFile(tsBlob));
+            this.throwIfStale(opId);
+            try {
+              const code = await this.ffmpeg.exec([
+                "-i", inputName,
+                "-c:v", "copy", "-c:a", "copy",
+                "-movflags", "+faststart",
+                "-avoid_negative_ts", "make_zero",
+                outputName,
+              ]);
+              if (code !== 0) throw new Error(`ffmpeg exited ${code}`);
+            } catch (e) {
+              if (!this.operationOwns(opId) || (e && e.name === "AbortError")) throw e;
+              console.warn("ffmpeg copy codec failed; re-encoding:", e);
+              const code = await this.ffmpeg.exec([
+                "-i", inputName,
+                "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+                "-c:a", "aac", "-movflags", "+faststart",
+                outputName,
+              ]);
+              if (code !== 0) throw new Error(`ffmpeg exited ${code}`);
+            }
+            this.throwIfStale(opId);
+            const out = await this.ffmpeg.readFile(outputName);
+            this.throwIfStale(opId);
+            return new Blob([out.buffer], { type: "video/mp4" });
+          } finally {
+            try { await this.ffmpeg.deleteFile(inputName); } catch {}
+            try { await this.ffmpeg.deleteFile(outputName); } catch {}
           }
-          const out = await this.ffmpeg.readFile(outputName);
-          const blob = new Blob([out.buffer], { type: "video/mp4" });
-          try { await this.ffmpeg.deleteFile(inputName); } catch {}
-          try { await this.ffmpeg.deleteFile(outputName); } catch {}
-          return blob;
         },
 
         async ensureFfmpeg() {
@@ -1251,13 +1376,16 @@
 
         // ---- GIF mode ----
         async downloadGif() {
+          if (this.loadingMode !== null) return;
           if (!this.videoSource || this.videoSource.kind !== "gif") return;
+          const op = this.beginOperation();
           this.loadingMode = "gif";
           this.progressBarVisible = true;
           this.progress = 50;
           this.status = this.t.statusDownloadingGif;
           try {
-            const blob = await this.fetchBlobWithProgress(this.videoSource.url, 50, 50);
+            const blob = await this.fetchBlobWithProgress(this.videoSource.url, 50, 50, op.signal);
+            if (!this.operationOwns(op.id)) return;
             this.downloadLink = URL.createObjectURL(blob);
             this.gifPreviewVisible = true;
             triggerDownload(blob, `${this.postCid}.gif`);
@@ -1266,27 +1394,34 @@
             this.progressBarVisible = false;
             this.status = "";
           } catch (error) {
+            if (!this.operationOwns(op.id)) return;
             console.error("GIF download failed:", error);
             this.status = this.t.errBlobFetch;
             this.progressBarVisible = false;
           } finally {
-            this.loadingMode = null;
+            if (this.operationOwns(op.id)) this.loadingMode = null;
           }
         },
 
         // ---- HLS helpers ----
-        async processPlaylist(playlistUrl) {
-          const masterRes = await fetch(playlistUrl);
+        async processPlaylist(playlistUrl, signal) {
+          const opId = this._opId;
+          const fetchOpts = signal ? { signal } : undefined;
+          const masterRes = await fetch(playlistUrl, fetchOpts);
+          this.throwIfStale(opId);
           if (!masterRes.ok) throw new Error(`Failed to fetch playlist: ${masterRes.status}`);
           const master = await masterRes.text();
+          this.throwIfStale(opId);
           const subLang = this.extractSubtitleLang(master);
           if (subLang) this.setSubtitleUrl(playlistUrl, subLang);
           const variantUrl = this.parseHighestQualityVideoUrl(master, playlistUrl);
-          const variantRes = await fetch(variantUrl);
+          const variantRes = await fetch(variantUrl, fetchOpts);
+          this.throwIfStale(opId);
           if (!variantRes.ok) throw new Error(`Failed to fetch variant: ${variantRes.status}`);
           const variant = await variantRes.text();
+          this.throwIfStale(opId);
           const segs = this.parseSegmentUrls(variant, variantUrl);
-          return await this.downloadSegments(segs);
+          return await this.downloadSegments(segs, signal);
         },
         extractSubtitleLang(m3u8) {
           for (const line of m3u8.split("\n")) {
@@ -1298,13 +1433,20 @@
           return null;
         },
         async setSubtitleUrl(playlistUrl, lang) {
+          const opId = this._opId;
+          const signal = this._opAbort ? this._opAbort.signal : undefined;
           this.subtitleLang = lang;
           try {
             const url = `${playlistUrl.replace("playlist.m3u8", "")}subtitles/${lang}.vtt`;
-            const res = await fetch(url);
-            if (!res.ok) return;
-            this.subtitleUrl = URL.createObjectURL(await res.blob());
-          } catch (e) { console.warn("Subtitle load failed:", e); }
+            const res = await fetch(url, signal ? { signal } : undefined);
+            if (!this.operationOwns(opId) || !res.ok) return;
+            const blob = await res.blob();
+            if (!this.operationOwns(opId)) return;
+            this.subtitleUrl = URL.createObjectURL(blob);
+          } catch (e) {
+            if (!this.operationOwns(opId) || e.name === "AbortError") return;
+            console.warn("Subtitle load failed:", e);
+          }
         },
         parseHighestQualityVideoUrl(master, baseUrl) {
           let best = 0, url = "";
@@ -1325,45 +1467,59 @@
             .filter(l => !l.startsWith("#") && l.trim() !== "")
             .map(s => new URL(s, baseUrl).toString());
         },
-        async downloadSegments(urls) {
+        async downloadSegments(urls, signal) {
+          const opId = this._opId;
           const chunks = new Array(urls.length);
           let done = 0;
           const concurrency = 6;
+          const fetchOpts = signal ? { signal } : undefined;
           const fetchOne = async (url, i) => {
-            const res = await fetch(url);
+            const res = await fetch(url, fetchOpts);
+            this.throwIfStale(opId);
             if (!res.ok) throw new Error(`Segment ${i}: ${res.status}`);
             chunks[i] = await res.arrayBuffer();
+            this.throwIfStale(opId);
             done++;
             this.progress = 5 + (done / urls.length) * 40;
           };
           for (let i = 0; i < urls.length; i += concurrency) {
             const batch = urls.slice(i, i + concurrency);
             await Promise.all(batch.map((u, k) => fetchOne(u, i + k)));
+            this.throwIfStale(opId);
           }
           return new Blob(chunks, { type: "video/MP2T" });
         },
 
         // ---- Generic fetch with progress (for blob endpoints that send Content-Length) ----
-        async fetchBlobWithProgress(url, progressStart = 10, progressSpan = 80) {
-          const res = await fetch(url);
+        async fetchBlobWithProgress(url, progressStart = 10, progressSpan = 80, signal) {
+          const opId = this._opId;
+          const res = await fetch(url, signal ? { signal } : undefined);
+          this.throwIfStale(opId);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const contentType = res.headers.get("content-type") || "";
           const totalHeader = res.headers.get("content-length");
           const total = totalHeader ? parseInt(totalHeader) : 0;
           if (!res.body || !total) {
             const blob = await res.blob();
+            this.throwIfStale(opId);
             this.progress = progressStart + progressSpan;
             return contentType ? new Blob([blob], { type: contentType }) : blob;
           }
           const reader = res.body.getReader();
           const chunks = [];
           let received = 0;
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-            received += value.length;
-            this.progress = progressStart + (received / total) * progressSpan;
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              this.throwIfStale(opId);
+              if (done) break;
+              chunks.push(value);
+              received += value.length;
+              this.progress = progressStart + (received / total) * progressSpan;
+            }
+          } catch (error) {
+            try { await reader.cancel(); } catch {}
+            throw error;
           }
           return new Blob(chunks, { type: contentType });
         },
