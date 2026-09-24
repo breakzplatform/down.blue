@@ -251,8 +251,15 @@
           <p class="mb-5" @click="toggleNetwork"><strong>{{ heroStrong }}</strong> {{ heroRest }}</p>
 
           <form @submit.prevent="findVideo" class="flex flex-wrap gap-2">
-            <input v-model="postUrl" type="text" inputmode="url" autocomplete="off" class="db-input min-w-0 flex-1"
+            <input ref="postUrlInput" v-model="postUrl" type="text" inputmode="url" autocomplete="off" class="db-input min-w-0 flex-1"
               :aria-label="t.urlLabel" :placeholder="t.placeholder" required />
+            <button v-if="postUrl" type="button" @click="clearPostUrl" :disabled="loadingMode !== null"
+              class="db-btn shrink-0 px-3 neo-press" :aria-label="t.clearBtn" :title="t.clearBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+              </svg>
+            </button>
             <button type="submit" :disabled="loadingMode !== null" class="db-btn db-btn-primary shrink-0 px-3 neo-press"
               :aria-label="t.findBtn" :title="t.findBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -460,6 +467,7 @@
         heroRest: "Enter a Bluesky post URL:",
         placeholder: "https://bsky.app/profile/kaelltx.bsky.social/post/3l4aiybdeoo2q",
         findBtn: "Download",
+        clearBtn: "Clear",
         urlLabel: "Post URL",
         progressLabel: "Download progress",
         privacy: "Fast, secure, and private — no external services required. No data, logs or analytics collected.",
@@ -529,6 +537,7 @@
         heroRest: "Cole a URL de um post do Bluesky:",
         placeholder: "https://bsky.app/profile/kaelltx.bsky.social/post/3l4aiybdeoo2q",
         findBtn: "Baixar",
+        clearBtn: "Limpar",
         urlLabel: "URL do post",
         progressLabel: "Progresso do download",
         privacy: "Rápido, seguro e privado — não usa serviços externos. Nenhum dado, log ou analytics é coletado.",
@@ -1066,6 +1075,13 @@
         },
         throwIfStale(id) {
           if (id !== this._opId) throw new DOMException("The operation was aborted", "AbortError");
+        },
+
+        clearPostUrl() {
+          if (this.loadingMode !== null) return;
+          this.resetState();
+          this.postUrl = "";
+          this.$refs.postUrlInput.focus();
         },
 
         // ---- Main flow: find video metadata only ----
