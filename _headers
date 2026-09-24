@@ -1,3 +1,18 @@
 /*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: credentialless
+
+/lib/ffmpeg-core-st-0.12.6.wasm
+  Cache-Control: public, max-age=31536000, immutable
+
+/lib/ffmpeg-core-st-0.12.6.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/lib/ffmpeg-0.12.7.min.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/lib/mux-7.0.3.min.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/lib/vue-3.5.34.min.js
+  Cache-Control: public, max-age=31536000, immutable
