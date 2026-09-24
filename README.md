@@ -58,9 +58,9 @@ Then open <http://localhost:8080>. ffmpeg runs single-threaded, so you do not ne
 ├── assets/                  # compiled Tailwind CSS
 └── scripts/                 # tooling only, never deployed
     ├── build-css.sh         # rebuilds assets/tailwind-*.css
-    ├── build-og.sh          # renders og.html to og.png
+    ├── build-social.sh      # renders og.html to og.png and banner.html to banner.png
     ├── build-icons.sh       # renders avatar.svg to avatar.png and the home screen icon
-    ├── og.html, avatar.svg, favicon.svg
+    ├── og.html, banner.html, avatar.svg, favicon.svg
     ├── tailwind-input.css, tailwind-theme.css
     ├── package.json, pnpm-lock.yaml   # pin the Tailwind CLI, nothing else
     └── ds/                  # copy of the joseli.to design system tokens
@@ -80,9 +80,9 @@ The CSS is Tailwind v4, compiled ahead of time. After changing Tailwind classes 
 
 The script installs the pinned Tailwind CLI with pnpm the first time it runs. The default Tailwind palette, radii and shadows are disabled on purpose, so use the design system names (`bg-surface-page`, `text-text-2`, `shadow-2` and so on).
 
-### Changing the preview image or icons
+### Changing the preview image, banner or icons
 
-Edit `scripts/og.html`, `scripts/avatar.svg` or `scripts/favicon.svg`, then run `./scripts/build-og.sh` or `./scripts/build-icons.sh`. Both need Chrome installed. The favicon is inlined in `index.html` by hand.
+Edit `scripts/og.html`, `scripts/banner.html`, `scripts/avatar.svg` or `scripts/favicon.svg`, then run `./scripts/build-social.sh` or `./scripts/build-icons.sh`. The banner and avatar are for the @down.blue profile and are not deployed. Both need Chrome installed. The favicon is inlined in `index.html` by hand.
 
 ## Known limitations
 
