@@ -1348,7 +1348,6 @@
             try {
               mp4Blob = await tsBlobToMp4WithMuxjs(tsBlob);
               if (!this.operationOwns(op.id)) return;
-              console.log("✅ Remuxed TS → MP4 with mux.js (no transcoding)");
             } catch (muxErr) {
               if (!this.operationOwns(op.id)) return;
               console.warn("mux.js remux failed; falling back to ffmpeg:", muxErr);
