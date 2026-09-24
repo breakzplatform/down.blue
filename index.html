@@ -292,9 +292,17 @@
             </div>
           </fieldset>
 
-          <!-- GIF: single button -->
+          <!-- GIF: download options -->
           <div v-if="videoSource && videoSource.kind === 'gif'" class="mt-4">
-            <button @click="downloadGif" :disabled="loadingMode !== null" class="db-btn db-btn-primary w-full neo-press">
+            <div v-if="videoSource.mp4Url" class="grid gap-2 sm:grid-cols-2">
+              <button @click="downloadGif(true)" :disabled="loadingMode !== null" class="db-btn db-btn-primary neo-press">
+                {{ t.btnGifMp4 }}
+              </button>
+              <button @click="downloadGif()" :disabled="loadingMode !== null" class="db-btn neo-press">
+                {{ t.btnGif }}
+              </button>
+            </div>
+            <button v-else @click="downloadGif()" :disabled="loadingMode !== null" class="db-btn db-btn-primary w-full neo-press">
               {{ t.btnGif }}
             </button>
           </div>
@@ -481,6 +489,7 @@
         btn720: "720p MP4",
         btn720Sub: "smaller · streaming quality",
         btnGif: "Download GIF",
+        btnGifMp4: "Download MP4",
         saveFile: "Save file",
         subtitlesPrefix: "Download Subtitles",
         gifAlt: "GIF Preview",
@@ -552,6 +561,7 @@
         btn720: "MP4 720p",
         btn720Sub: "menor · qualidade de streaming",
         btnGif: "Baixar GIF",
+        btnGifMp4: "Baixar MP4",
         saveFile: "Salvar arquivo",
         subtitlesPrefix: "Baixar legendas",
         gifAlt: "Pré-visualização do GIF",
@@ -1016,8 +1026,16 @@
             }
             return null;
           };
+          // Klipy names the MP4 rendition of a GIF in its `mp4` query param; the
+          // file sits beside the GIF and is far smaller.
+          const klipyMp4Url = (uri) => {
+            const gif = new URL(uri);
+            const id = gif.searchParams.get("mp4");
+            if (!/(^|\.)klipy\.com$/.test(gif.hostname) || !/^[A-Za-z0-9_-]{1,64}$/.test(id ?? "")) return null;
+            return new URL(`${id}.mp4`, gif.origin + gif.pathname).toString();
+          };
           const classifyExternal = (uri) => {
-            if (this.isGifUrl(uri)) return { kind: "gif", url: uri };
+            if (this.isGifUrl(uri)) return { kind: "gif", url: uri, mp4Url: klipyMp4Url(uri) };
             const hostname = (() => { try { return new URL(uri).hostname; } catch { return ""; } })();
             return { kind: "external", url: uri, hostname };
           };
@@ -1452,20 +1470,24 @@
         },
 
         // ---- GIF mode ----
-        async downloadGif() {
+        async downloadGif(asMp4 = false) {
           if (this.loadingMode !== null) return;
           if (!this.videoSource || this.videoSource.kind !== "gif") return;
+          if (asMp4 && !this.videoSource.mp4Url) return;
           const op = this.beginOperation();
           this.loadingMode = "gif";
           this.progressBarVisible = true;
           this.progress = 50;
           this.status = this.t.statusDownloadingGif;
           try {
-            const blob = await this.fetchBlobWithProgress(this.videoSource.url, 50, 50, op.signal);
+            const url = asMp4 ? this.videoSource.mp4Url : this.videoSource.url;
+            const blob = await this.fetchBlobWithProgress(url, 50, 50, op.signal);
             if (!this.operationOwns(op.id)) return;
+            this.cleanupBlobUrls();
             this.downloadLink = URL.createObjectURL(blob);
-            this.gifPreviewVisible = true;
-            this.deliverDownload(blob, `${this.postCid}.gif`);
+            this.videoPreviewVisible = asMp4;
+            this.gifPreviewVisible = !asMp4;
+            this.deliverDownload(blob, `${this.postCid}.${asMp4 ? "mp4" : "gif"}`);
             this.downloadReady = true;
             this.progress = 100;
             this.progressBarVisible = false;
