@@ -1,135 +1,107 @@
-# down.blue: Bluesky video downloader
+# down.blue
 
-A static single page that downloads and converts Bluesky videos entirely in the browser. No backend. Live at <https://downloader.notx.blue> and <https://down.blue>.
+Download videos and GIFs from Bluesky and the rest of the Atmosphere, straight from your browser. Everything runs on your device: there is no server, no sign-in and no analytics.
 
-By [@joseli.to](https://bsky.app/profile/joseli.to).
+**Use it at <https://down.blue>.** The old address, <https://downloader.notx.blue>, redirects there.
+
+Made by [@joseli.to](https://bsky.app/profile/joseli.to). MIT licensed.
+
+## Using it
+
+Paste the link to a post that has a video and pick a format:
+
+- **Original (raw)** is the file exactly as it was uploaded, fetched from the author's PDS.
+- **Full quality MP4** converts that original file to MP4, keeping the video as is and converting only the audio when it can.
+- **720p MP4** is built from Bluesky's HLS stream, a lighter file.
+
+Posts with an external GIF (Tenor, Giphy) get a single download button instead.
+
+Links from any Atmosphere client work, as long as they use the usual `/profile/<handle>/post/<id>` path: bsky.app, deer.social, blacksky.community and so on. You can also paste an `at://` URI. Quote posts work too, including a quote that has images of its own next to the quoted video.
+
+To open a post directly, add it to the address: `https://down.blue/?url=<post link>`.
+
+Your recent downloads stay in a history panel. It lives in your browser's `localStorage` and never leaves your device.
+
+### Without opening the page
+
+Reply to a video post mentioning [@down.blue](https://bsky.app/profile/down.blue) and the bot answers with a download link. The bot lives in its own repository, [breakzplatform/down-blue-bot](https://github.com/breakzplatform/down-blue-bot). There is also an iOS Shortcut, linked from the bot's profile.
 
 ## How it works
 
-1. You paste a Bluesky post URL (`https://bsky.app/profile/<handle>/post/<rkey>`).
-2. `extractProfileAndPost()` pulls `profile` and `post` out of it with a regex.
-3. It fetches `https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=at://<profile>/app.bsky.feed.post/<post>&depth=10`, the public AT Protocol API, no auth.
-4. `extractVideoUrl()` walks the post's `embed` (`app.bsky.embed.video`, `record`, `record#view`, `external#view`) looking for an HLS playlist or an external GIF.
-5. For video it downloads `master.m3u8`, picks the highest-quality variant, downloads that variant's `.m3u8`, then fetches the `.ts` segments in batches of six and concatenates them.
-6. It converts TS to MP4 with [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm), trying `-c copy` first and falling back to `libx264 + aac`.
-7. For external GIFs it fetches the URL and hands back the blob.
-8. History lives in `localStorage` under `urlHistory`, and `?url=...` processes a post automatically.
+1. The page reads the handle (or DID) and the post id from the link. The rest of the link is thrown away, so the site you copied it from does not matter.
+2. It asks the public Bluesky API for the post (`app.bsky.feed.getPostThread`, no authentication). If the post does not exist, this step fails.
+3. It looks through the post's embeds, including quoted posts, for a video or a GIF.
+4. Depending on the format, it fetches the original file from the author's PDS or the HLS playlist and its `.ts` segments. Everything is converted in your browser: the 720p stream is repackaged as MP4 with [mux.js](https://github.com/videojs/mux.js), and [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm) handles the original file and any stream mux.js cannot. ffmpeg copies the video first and re-encodes only if that fails.
 
-Conversion uses the single-thread `@ffmpeg/core`, which does not need `SharedArrayBuffer` or the COOP/COEP headers. The headers stay in `_headers` and in a `<meta>` tag anyway, harmless, in case the multi-thread core comes back.
-
-## The bot
-
-Mentioning [@down.blue](https://bsky.app/profile/down.blue) in a reply to a video post answers with a download link, so you never have to open this page. The bot is a separate project: [breakzplatform/down-blue-bot](https://github.com/breakzplatform/down-blue-bot). There is also an iOS Shortcut, linked from the bot's profile.
-
-## Layout
-
-```
-.
-├── index.html                          # the whole app: HTML, Vue 3, logic
-├── _headers                            # COOP/COEP for Netlify and Cloudflare Pages
-├── LICENSE                             # MIT
-├── share.png                           # Open Graph image
-├── lib/                                # vendored third-party libs, version in the filename
-│   ├── vue-3.5.34.min.js
-│   ├── mux-7.0.3.min.js                # mux.js, remuxes TS to MP4 without wasm
-│   ├── ffmpeg-0.12.7.min.js            # @ffmpeg/ffmpeg 0.12.7
-│   ├── 814.ffmpeg.js                   # class worker, fixed name required by webpack
-│   ├── ffmpeg-core-st-0.12.6.js        # single-thread ffmpeg-core
-│   └── ffmpeg-core-st-0.12.6.wasm
-├── assets/
-│   └── tailwind-4.3.3.css              # compiled CSS, generated, not vendored
-└── scripts/                            # none of this ships; the deploy prunes it
-    ├── build-css.sh                    # regenerates assets/tailwind-*.css
-    ├── package.json                    # pins the Tailwind CLI only
-    ├── pnpm-lock.yaml                  # 66 packages locked by integrity
-    ├── tailwind-input.css              # build entry point
-    ├── tailwind-theme.css              # Tailwind v4 bridge, @theme only, no values
-    └── ds/                             # verbatim copy of the joseli.to design system
-```
-
-Fonts are not versioned here. They come from `static.joseli.to`, which sends `access-control-allow-origin: *` and caches for a year.
+The whole app is one file, `index.html`, using Vue 3 without a build step.
 
 ## Running it locally
 
-The core is single-thread, so any static server works and you do not need COOP/COEP:
+Any static server works:
 
 ```sh
 npx http-server -p 8080
 ```
 
-## Deploying
+Then open <http://localhost:8080>. ffmpeg runs single-threaded, so you do not need special headers locally. The COOP/COEP headers in `_headers` are kept only in case a multi-threaded build comes back.
 
-Netlify publishes the repo root. The build command is not a build: it deletes the files that should not reach the CDN (`scripts/`, `netlify.toml`, `.gitignore`). To keep something else off the public site, add it to that `rm -rf`.
+## Project layout
 
-All the npm metadata sits under `scripts/` on purpose. Netlify decides whether to install dependencies by looking for a `package.json` at the site root, so keeping it out of the root means the deploy installs nothing.
+```
+.
+├── index.html               # the whole app: markup, styles, Vue code
+├── _headers                 # COOP/COEP headers for Netlify and Cloudflare Pages
+├── netlify.toml             # publish settings; strips scripts/ from the deployed site
+├── og.png                   # link preview image
+├── apple-touch-icon.png     # home screen icon
+├── lib/                     # vendored libraries, version in the file name
+├── assets/                  # compiled Tailwind CSS
+└── scripts/                 # tooling only, never deployed
+    ├── build-css.sh         # rebuilds assets/tailwind-*.css
+    ├── build-og.sh          # renders og.html to og.png
+    ├── build-icons.sh       # renders avatar.svg to avatar.png and the home screen icon
+    ├── og.html, avatar.svg, favicon.svg
+    ├── tailwind-input.css, tailwind-theme.css
+    ├── package.json, pnpm-lock.yaml   # pin the Tailwind CLI, nothing else
+    └── ds/                  # copy of the joseli.to design system tokens
+```
 
-Regenerating the stylesheet is the one manual step, needed whenever Tailwind classes change in `index.html` or the design system in `scripts/ds/` is replaced:
+`lib/814.ffmpeg.js` is the one vendored file without a version in its name: the ffmpeg package loads it by that exact name.
+
+Fonts are not in the repository. They load from `static.joseli.to`.
+
+### Changing styles
+
+The CSS is Tailwind v4, compiled ahead of time. After changing Tailwind classes in `index.html`, rebuild it:
 
 ```sh
 ./scripts/build-css.sh
 ```
 
-## Known problems
+The script installs the pinned Tailwind CLI with pnpm the first time it runs. The default Tailwind palette, radii and shadows are disabled on purpose, so use the design system names (`bg-surface-page`, `text-text-2`, `shadow-2` and so on).
 
-These are confirmed, in rough order of how much they hurt.
+### Changing the preview image or icons
 
-Starting a second download while one is running corrupts state. Clicking a history card mid-conversion calls `resetState()`, which revokes the blob URL the running download is still writing to, and both callers share `input.ts` and `out.mp4` inside the wasm filesystem.
+Edit `scripts/og.html`, `scripts/avatar.svg` or `scripts/favicon.svg`, then run `./scripts/build-og.sh` or `./scripts/build-icons.sh`. Both need Chrome installed. The favicon is inlined in `index.html` by hand.
 
-A failed `ffmpeg.exec` looks like a success. The worker posts the return code instead of throwing, so the `try/catch` around the copy-codec attempt never fires and the `libx264` fallback never runs. A partial `out.mp4` gets downloaded as if it were fine.
+## Known limitations
 
-A quoted video is fetched under the wrong DID. The walker closes over the outer post's author, so raw and full-quality downloads of someone else's quoted video ask the wrong PDS for the blob and get a 404. The 720p path still works because its playlist URL is absolute.
+Long videos are the weak spot. Bluesky allows up to ten minutes, and single-threaded ffmpeg keeps the whole input and output in memory, so a long video can be slow or fail on a phone.
 
-A quoted video is dropped when it sits beside other media. `recordWithMedia#view` only returns when `media` is a video or an external URI, so a quote of a video post that also has images reports "quote post without video".
+Only the post lookup has a timeout. If a later download hangs, reload the page.
 
-URL parsing swallows query strings. The regex is unanchored and `[^/]+` does not stop at `?` or `#`, so `...?ref=share` becomes part of the rkey and the post "does not exist". `postUrl.includes('bsky.app')` accepts any URL containing that substring, and a stored `javascript:` URL later ends up bound to an `href`.
+Cancelling a download does not stop an ffmpeg conversion that has already started. The result is discarded, but the work runs to the end.
 
-Only `getPostThread` has a timeout. PDS resolution, blob fetches, playlists, segments and `ffmpeg.exec` all run unbounded, so one hang leaves the button disabled until reload.
+There are no automated tests yet. The HLS parsers (`parseHighestQualityVideoUrl`, `parseSegmentUrls`, `extractSubtitleLang`) and the URL and embed parsers (`extractProfileAndPost`, `extractVideoInfo`) are the best place to start.
 
-`localStorage` failures are swallowed. `loadHistory` parses without a `try` and runs before the ffmpeg preload, so corrupt history aborts the rest of startup. The quota path trims memory but not storage, so a reload brings the old list back.
+## Contributing
 
-Blob URLs are only revoked on the next search, so downloading raw then 720p then GIF on one post leaks each previous blob for the life of the page.
-
-`getPostThread` asks for `depth=10` and inherits `parentHeight=80` while the handler reads only `data.thread.post`. A reply in a long thread can hit the 15-second timeout for nothing.
-
-## Other debt
-
-No CI and no tests. Nothing checks a change before it deploys.
-
-No bundler. `index.html` loads Vue and ffmpeg through synchronous `<script>` tags, so the app code is unminified and there is no code splitting.
-
-Everything is in one file. Markup, styles, data, methods and the HLS parsers are mixed together, which makes review hard and unit testing impossible without extracting first.
-
-The page is Computer Modern throughout, including body copy. Five faces, around 856 KB, served with `font-display: swap` so they do not block first paint. Subsetting would cut most of that, but it belongs to the asset host, not to this repo.
-
-Headers live in two places. `<meta http-equiv>` has partial browser support; `_headers` is what actually applies in production.
-
-No SRI on the vendored scripts, and no version marker inside them, which makes a supply-chain audit awkward.
-
-`urlHistory` grows without a cap. No `robots.txt` or `sitemap.xml`. The canonical URL and `og:image` point at `https://down.blue`, which breaks previews on forks and staging. The preview image is generated: edit `scripts/og.html` and run `./scripts/build-og.sh`.
-
-`isWebCodecsSupported()` exists but the native fast path looks incomplete, and everything falls back to ffmpeg anyway.
-
-## What to fix next
-
-Roughly by return on effort:
-
-1. Guard against overlapping downloads with a single `AbortController` and a monotonic operation id. This is the one that corrupts user-visible state.
-2. Check the `ffmpeg.exec` return code so the re-encode fallback actually runs.
-3. Parse the post URL with `new URL()` and require `https:` and `hostname === 'bsky.app'`, then store only the normalized URL.
-4. Add `&depth=0&parentHeight=0` to both thread fetches.
-5. Give every remaining fetch a timeout, and store the `ensureFfmpeg()` promise so a preload and a click cannot both call `load()`.
-6. Unit tests for `extractProfileAndPost`, `extractVideoUrl`, `parseHighestQualityVideoUrl`, `parseSegmentUrls` and `extractSubtitleLang`. They are pure functions covering the heart of the parser.
-7. SRI and explicit versions for everything in `lib/`.
-8. A service worker that caches `ffmpeg-core.wasm`, about 25 MB, which would pay for itself on the second visit.
-9. Cap and rotate `urlHistory`, say 50 entries.
-10. Move to Vite and split `index.html` into modules. That would also make the multi-thread `@ffmpeg/core` workable again, which matters for long videos.
-
-If telemetry is ever added, keep it opt-in. The page currently says it collects no analytics, and that claim is part of the point.
+Issues and pull requests are welcome. Please test in a browser before sending a change: a regular video, a quote post, an invalid link, and both the light and dark themes. The page promises no analytics, so any telemetry has to be opt-in.
 
 ## Support
 
-Pix · [APOIA.se/joselito](https://apoia.se/joselito) · [Buy Me a Coffee](https://buymeacoffee.com/joselito)
+[Buy Me a Coffee](https://buymeacoffee.com/joselito)
 
 ## Notice
 
-Respect copyright and Bluesky's terms of service. This tool only rearranges media that is already public. It does not bypass access controls.
+Respect copyright and Bluesky's terms of service. This tool only downloads media that is already public, and it does not bypass any access control.
