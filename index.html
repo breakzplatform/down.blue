@@ -315,6 +315,9 @@
             </p>
           </div>
 
+          <a v-if="downloadReady && downloadLink && downloadName" :href="downloadLink" :download="downloadName"
+            class="db-btn mt-4 w-full neo-press">{{ t.saveFile }} ({{ downloadName }})</a>
+
           <!-- Subtitle download (after HLS path) -->
           <a v-if="subtitleUrl" :href="subtitleUrl" class="db-btn mt-2 w-full neo-press"
             :download="`${subtitleLang}.vtt`">{{ t.subtitlesPrefix }} ({{ subtitleLang }}.vtt)</a>
@@ -478,6 +481,7 @@
         btn720: "720p MP4",
         btn720Sub: "smaller · streaming quality",
         btnGif: "Download GIF",
+        saveFile: "Save file",
         subtitlesPrefix: "Download Subtitles",
         gifAlt: "GIF Preview",
         historyTitle: "Download History",
@@ -548,6 +552,7 @@
         btn720: "MP4 720p",
         btn720Sub: "menor · qualidade de streaming",
         btnGif: "Baixar GIF",
+        saveFile: "Salvar arquivo",
         subtitlesPrefix: "Baixar legendas",
         gifAlt: "Pré-visualização do GIF",
         historyTitle: "Histórico de downloads",
@@ -629,6 +634,7 @@
           videoPreviewVisible: false,
           gifPreviewVisible: false,
           downloadLink: "",
+          downloadName: "",
           downloadReady: false,
           subtitleLang: "",
           subtitleUrl: "",
@@ -1227,7 +1233,7 @@
             if (!this.operationOwns(op.id)) return;
             const ext = extensionFromMime(blob.type) || "mp4";
             const filename = `video-${postId}.${ext}`;
-            triggerDownload(blob, filename);
+            this.deliverDownload(blob, filename);
             this.downloadLink = URL.createObjectURL(blob);
             this.videoPreviewVisible = blob.type.startsWith("video/");
             this.downloadReady = true;
@@ -1271,7 +1277,7 @@
               if (!this.operationOwns(op.id)) return;
               const blob = new Blob([bytes], { type: "video/mp4" });
               this.downloadLink = URL.createObjectURL(blob);
-              triggerDownload(blob, downloadName);
+              this.deliverDownload(blob, downloadName);
               this.videoPreviewVisible = true;
               this.downloadReady = true;
               this.progress = 100;
@@ -1317,7 +1323,7 @@
             if (!this.operationOwns(op.id)) return;
             const blob = new Blob([out.buffer], { type: "video/mp4" });
             this.downloadLink = URL.createObjectURL(blob);
-            triggerDownload(blob, downloadName);
+            this.deliverDownload(blob, downloadName);
             this.videoPreviewVisible = true;
             this.downloadReady = true;
             this.progress = 100;
@@ -1369,7 +1375,7 @@
             }
 
             this.downloadLink = URL.createObjectURL(mp4Blob);
-            triggerDownload(mp4Blob, outputName);
+            this.deliverDownload(mp4Blob, outputName);
             this.videoPreviewVisible = true;
             this.downloadReady = true;
             this.progress = 100;
@@ -1459,7 +1465,7 @@
             if (!this.operationOwns(op.id)) return;
             this.downloadLink = URL.createObjectURL(blob);
             this.gifPreviewVisible = true;
-            triggerDownload(blob, `${this.postCid}.gif`);
+            this.deliverDownload(blob, `${this.postCid}.gif`);
             this.downloadReady = true;
             this.progress = 100;
             this.progressBarVisible = false;
@@ -1595,6 +1601,12 @@
           return new Blob(chunks, { type: contentType });
         },
 
+        // Some browsers (DuckDuckGo on Android) ignore a scripted click on a
+        // blob: link, so the same file also stays behind a link the user taps.
+        deliverDownload(blob, filename) {
+          this.downloadName = filename;
+          triggerDownload(blob, filename);
+        },
         cleanupBlobUrls() {
           for (const k of ["downloadLink", "subtitleUrl"]) {
             if (this[k] && this[k].startsWith("blob:")) URL.revokeObjectURL(this[k]);
@@ -1609,6 +1621,7 @@
           this.gifPreviewVisible = false;
           this.downloadReady = false;
           this.downloadLink = "";
+          this.downloadName = "";
           this.subtitleLang = "";
           this.subtitleUrl = "";
           this.postCid = "";
