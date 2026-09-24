@@ -921,7 +921,10 @@
             throw new Error("Invalid URL format");
           }
           // Handle or DID, and a record key, per the AT Protocol syntax rules.
-          if (!/^[a-zA-Z0-9._:%-]{1,253}$/.test(profile) || !/^[a-zA-Z0-9._:~-]{1,512}$/.test(post)) {
+          // No "%": a decoded value must rebuild into the same URL, or history drifts.
+          // "." and ".." are forbidden record keys and would walk the rebuilt path.
+          if (!/^[a-zA-Z0-9._:-]{1,253}$/.test(profile) || !/^[a-zA-Z0-9._:~-]{1,512}$/.test(post)
+            || [".", ".."].includes(profile) || [".", ".."].includes(post)) {
             throw new Error("Invalid URL format");
           }
           return {
