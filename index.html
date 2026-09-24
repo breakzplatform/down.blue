@@ -1014,10 +1014,13 @@
           };
           return walk(post.embed, author.did);
         },
+        // Klipy (Bluesky's current GIF provider) appends a query string to the .gif path.
         isGifUrl(url) {
-          return url.includes("tenor.com") ||
-            url.includes("giphy.com") ||
-            url.toLowerCase().endsWith(".gif");
+          let parsed;
+          try { parsed = new URL(url); } catch { return false; }
+          const host = parsed.hostname;
+          return ["tenor.com", "giphy.com", "klipy.com"].some(d => host === d || host.endsWith(`.${d}`)) ||
+            parsed.pathname.toLowerCase().endsWith(".gif");
         },
 
         // ---- DID resolution → PDS endpoint ----
