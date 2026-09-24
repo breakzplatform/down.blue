@@ -337,7 +337,7 @@
 
           <!-- Video Preview -->
           <div class="mt-4" v-if="videoPreviewVisible">
-            <video :key="downloadLink" controls class="mx-auto block w-full max-w-lg border border-strong bg-[#000]"
+            <video :key="downloadLink" :poster="videoPoster" controls class="mx-auto block w-full max-w-lg border border-strong bg-[#000]"
               preload="metadata">
               <source :src="downloadLink" type="video/mp4" />
               <track :label="subtitleLang" kind="subtitles" v-if="subtitleUrl" :srclang="subtitleLang" :src="subtitleUrl" default />
@@ -692,6 +692,11 @@
         hasMoreHistory() {
           return this.filteredHistory.length > this.paginatedHistory.length;
         },
+        videoPoster() {
+          const source = this.videoSource;
+          if (source?.kind !== "bluesky-video" || !source.did || !source.cid) return null;
+          return videoThumbnailUrl(source.did, source.cid);
+        },
       },
       watch: {
         historyQuery() { this.historyPage = 1; },
@@ -841,7 +846,7 @@
           const data = this.getHistoryItemData(item);
           if (!data || !data.videoDid || !data.videoCid) return null;
           if (this.thumbnailErrors[data.postId]) return null;
-          return `https://video.bsky.app/watch/${encodeURIComponent(data.videoDid)}/${encodeURIComponent(data.videoCid)}/thumbnail.jpg`;
+          return videoThumbnailUrl(data.videoDid, data.videoCid);
         },
         handleThumbnailError(postId) {
           if (!postId) return;
@@ -1715,6 +1720,9 @@
         "image/gif": "gif",
       };
       return map[m] || null;
+    }
+    function videoThumbnailUrl(did, cid) {
+      return `https://video.bsky.app/watch/${encodeURIComponent(did)}/${encodeURIComponent(cid)}/thumbnail.jpg`;
     }
     function triggerDownload(blob, filename) {
       const url = URL.createObjectURL(blob);
