@@ -531,6 +531,7 @@
         errOnlyBsky: "Only Bluesky native videos and GIFs are supported.",
         errImagesPost: "This post contains images, not videos or GIFs.",
         errQuotePost: "This is a quote post without video or GIF content.",
+        errQuoteUnavailable: "The quoted post is blocked, deleted or unavailable, so its video can't be reached.",
         errTextPost: "This is a text post without video or GIF content.",
         errNoVideo: "No video or GIF found in this post.",
         errPdsResolve: "Could not resolve the author's PDS endpoint.",
@@ -603,6 +604,7 @@
         errOnlyBsky: "Apenas vídeos nativos e GIFs do Bluesky são suportados.",
         errImagesPost: "Este post contém imagens, não vídeo ou GIF.",
         errQuotePost: "Este é um post de citação sem vídeo ou GIF.",
+        errQuoteUnavailable: "O post citado está bloqueado, apagado ou indisponível, e o vídeo dele não pode ser acessado.",
         errTextPost: "Este é um post de texto sem vídeo ou GIF.",
         errNoVideo: "Nenhum vídeo ou GIF encontrado neste post.",
         errPdsResolve: "Não consegui resolver o PDS do autor.",
@@ -1203,7 +1205,16 @@
           const text = post.record?.text || "";
           const hasImages = post.embed?.images?.length > 0;
           const hasQuote = post.embed?.record;
+          const quoted = post.embed?.["$type"] === "app.bsky.embed.recordWithMedia#view"
+            ? post.embed.record?.record
+            : post.embed?.record;
+          const quoteUnavailable = [
+            "app.bsky.embed.record#viewBlocked",
+            "app.bsky.embed.record#viewNotFound",
+            "app.bsky.embed.record#viewDetached",
+          ].includes(quoted?.["$type"]);
           if (hasImages) this.status = this.t.errImagesPost;
+          else if (quoteUnavailable) this.status = this.t.errQuoteUnavailable;
           else if (hasQuote) this.status = this.t.errQuotePost;
           else if (text.length > 0) this.status = this.t.errTextPost;
           else this.status = this.t.errNoVideo;
