@@ -224,8 +224,8 @@
   <div id="app">
     <div class="mx-auto max-w-[880px] px-6 pb-16">
       <div class="flex flex-wrap items-center justify-end gap-2 pt-4">
-        <button @click="toggleLang" class="db-btn db-btn-sm neo-press neo-sm">{{ lang === 'pt' ? 'english' : 'português' }}</button>
-        <button @click="toggleTheme" class="db-btn db-btn-sm neo-press neo-sm" :aria-pressed="theme === 'dark'">
+        <button @click="toggleLang" :lang="lang === 'pt' ? 'en' : 'pt-BR'" class="db-btn db-btn-sm neo-press neo-sm">{{ lang === 'pt' ? 'english' : 'português' }}</button>
+        <button @click="toggleTheme" class="db-btn db-btn-sm neo-press neo-sm">
           <svg v-if="theme === 'dark'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="4" />
@@ -240,6 +240,7 @@
         </button>
       </div>
 
+      <main>
       <h1 class="db-wordmark">down<span class="db-wordmark-suffix">.blue</span></h1>
 
       <section class="db-panel mt-9 mb-6">
@@ -250,7 +251,8 @@
           <p class="mb-5"><strong>{{ t.heroStrong }}</strong> {{ t.heroRest }}</p>
 
           <form @submit.prevent="findVideo" class="flex flex-wrap gap-2">
-            <input v-model="postUrl" type="text" class="db-input min-w-0 flex-1" :placeholder="t.placeholder" required />
+            <input v-model="postUrl" type="text" inputmode="url" autocomplete="off" class="db-input min-w-0 flex-1"
+              :aria-label="t.urlLabel" :placeholder="t.placeholder" required />
             <button type="submit" :disabled="loadingMode !== null" class="db-btn db-btn-primary shrink-0 px-3 neo-press"
               :aria-label="t.findBtn" :title="t.findBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -293,14 +295,18 @@
           <!-- Feedback follows the action that causes it. While the post is
                being fetched neither action block is rendered, so this still
                lands directly under the form. -->
-          <div v-if="progressBarVisible" class="db-progress mt-6" role="progressbar" :aria-valuenow="progress"
-            aria-valuemin="0" aria-valuemax="100">
+          <div v-if="progressBarVisible" class="db-progress mt-6" role="progressbar" :aria-valuenow="Math.round(progress)"
+            aria-valuemin="0" aria-valuemax="100" :aria-label="t.progressLabel">
             <div class="db-progress-fill" :style="{ width: progress + '%' }"></div>
           </div>
 
-          <p v-if="status" aria-live="polite" class="db-status mt-4" :class="{ 'db-status-error': statusIsError }">
-            <span v-if="statusIsError" aria-hidden="true">✕ </span>{{ status }}
-          </p>
+          <!-- The live region stays mounted: one created together with its text is
+               often not announced. Only the message inside it comes and goes. -->
+          <div role="status" aria-live="polite">
+            <p v-if="status" class="db-status mt-4" :class="{ 'db-status-error': statusIsError }">
+              <span v-if="statusIsError" aria-hidden="true">✕ </span>{{ status }}
+            </p>
+          </div>
 
           <!-- Subtitle download (after HLS path) -->
           <a v-if="subtitleUrl" :href="subtitleUrl" class="db-btn mt-2 w-full neo-press"
@@ -329,17 +335,17 @@
           <span>{{ filteredHistory.length }}/{{ urlHistory.length }}</span>
         </h2>
         <div class="border-b border-hairline p-3">
-          <input v-model="historyQuery" type="search" :placeholder="t.searchHistory" class="db-input" />
+          <input v-model="historyQuery" type="search" :aria-label="t.searchHistory" :placeholder="t.searchHistory" class="db-input" />
         </div>
         <p v-if="filteredHistory.length === 0" class="db-meta p-9 text-center">{{ t.noResults }}</p>
         <div class="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 lg:grid-cols-3">
           <article v-for="(item, index) in paginatedHistory" :key="getHistoryItemUrl(item) || index"
             class="db-card flex min-w-0 flex-col border border-strong neo-lift neo-sm">
             <button @click="fillAndFind(item)" :title="t.reopen" :disabled="loadingMode !== null"
-              class="db-thumb-btn relative block w-full overflow-hidden border-b border-strong"
+              tabindex="-1" aria-hidden="true" class="db-thumb-btn relative block w-full overflow-hidden border-b border-strong"
               style="aspect-ratio: 16 / 9;">
               <img v-if="getThumbnailUrl(item)" :src="getThumbnailUrl(item)"
-                :alt="getHistoryItemData(item).postId" loading="lazy"
+                alt="" loading="lazy"
                 crossorigin="anonymous" referrerpolicy="no-referrer"
                 class="db-thumb absolute inset-0 h-full w-full object-cover"
                 @error="handleThumbnailError(getHistoryItemData(item).postId)" />
@@ -390,6 +396,7 @@
           {{ t.mentionMiddle }} <a href="https://bsky.app/profile/down.blue/post/3l534dn26xp2j">{{ t.iosShortcut }}</a>.
         </div>
       </aside>
+      </main>
 
       <footer class="pt-6">
         <p class="db-meta mb-6 text-center">
@@ -453,6 +460,8 @@
         heroRest: "Enter a Bluesky post URL:",
         placeholder: "https://bsky.app/profile/kaelltx.bsky.social/post/3l4aiybdeoo2q",
         findBtn: "Download",
+        urlLabel: "Post URL",
+        progressLabel: "Download progress",
         privacy: "Fast, secure, and private — no external services required. No data, logs or analytics collected.",
         btnRaw: "Original (raw)",
         btnRawSub: "as uploaded · no re-encode",
@@ -520,6 +529,8 @@
         heroRest: "Cole a URL de um post do Bluesky:",
         placeholder: "https://bsky.app/profile/kaelltx.bsky.social/post/3l4aiybdeoo2q",
         findBtn: "Baixar",
+        urlLabel: "URL do post",
+        progressLabel: "Progresso do download",
         privacy: "Rápido, seguro e privado — não usa serviços externos. Nenhum dado, log ou analytics é coletado.",
         btnRaw: "Original (raw)",
         btnRawSub: "como foi enviado · sem reencode",
