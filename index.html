@@ -664,7 +664,7 @@
       watch: {
         historyQuery() { this.historyPage = 1; },
       },
-      async mounted() {
+      mounted() {
         document.documentElement.lang = this.lang === "pt" ? "pt-BR" : "en";
         document.documentElement.dataset.theme = this.theme;
         this.loadHistory();
@@ -678,12 +678,6 @@
           const pct = Math.max(0, Math.min(1, Number(progress) || 0));
           this.progress = 50 + Math.round(pct * 50);
         });
-
-        try {
-          await this.ensureFfmpeg();
-        } catch (error) {
-          console.warn("Failed to preload FFmpeg:", error);
-        }
 
         const urlParams = new URLSearchParams(window.location.search);
         const url = urlParams.get("url");
@@ -1416,6 +1410,7 @@
 
         async ensureFfmpeg() {
           if (this.ffmpeg.loaded) return;
+          if (this._ffmpegLoading) return this._ffmpegLoading;
           // @ffmpeg/ffmpeg pinned to 0.12.7: spawns a *classic* class-worker
           // that loads the core via importScripts (0.12.10+ switched to a
           // module-worker that can't load the UMD core without a bundler).
@@ -1424,10 +1419,14 @@
           // classWorkerURL, so that one file cannot be version-suffixed.
           // Single-thread @ffmpeg/core: no SharedArrayBuffer / COOP-COEP needed.
           const base = `${location.origin}/lib`;
-          await this.ffmpeg.load({
+          this._ffmpegLoading = this.ffmpeg.load({
             coreURL: `${base}/ffmpeg-core-st-0.12.6.js`,
             wasmURL: `${base}/ffmpeg-core-st-0.12.6.wasm`,
+          }).catch(err => {
+            this._ffmpegLoading = null;
+            throw err;
           });
+          return this._ffmpegLoading;
         },
 
         // ---- GIF mode ----
