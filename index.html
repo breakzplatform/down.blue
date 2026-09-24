@@ -168,8 +168,13 @@
     /* Ink on paper, not paper on ink: highlights have to come back as the paper
        and shadows as the ink, or a mostly-white frame turns into a dark slab and
        stops matching the empty placeholder beside it. That means the operator
-       follows the paper, same as the dot screen below. */
-    .db-thumb { filter: grayscale(1) contrast(1.35); mix-blend-mode: screen; }
+       follows the paper, same as the dot screen below.
+       Sized here, not with utilities: the design system's unlayered
+       `img { height: auto }` beats Tailwind's layered h-full. */
+    .db-thumb {
+      width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: center;
+      filter: grayscale(1) contrast(1.35); mix-blend-mode: screen;
+    }
     :root[data-theme="dark"] .db-thumb { mix-blend-mode: multiply; }
     /* Then the paper punches back through on the same 7px pitch as the empty
        placeholder, so a screened frame and a missing one read as one family.
@@ -365,7 +370,7 @@
               <img v-if="getThumbnailUrl(item)" :src="getThumbnailUrl(item)"
                 alt="" loading="lazy"
                 crossorigin="anonymous" referrerpolicy="no-referrer"
-                class="db-thumb absolute inset-0 h-full w-full object-cover"
+                class="db-thumb absolute inset-0"
                 @error="handleThumbnailError(getHistoryItemData(item).postId)" />
               <span v-else class="db-halftone absolute inset-0 block"
                 :style="thumbnailPlaceholderStyle(getHistoryItemData(item).postId)"></span>
