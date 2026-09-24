@@ -324,7 +324,7 @@
 
           <!-- Video Preview -->
           <div class="mt-4" v-if="videoPreviewVisible">
-            <video :key="postCid" controls class="mx-auto block w-full max-w-lg border border-strong bg-[#000]"
+            <video :key="downloadLink" controls class="mx-auto block w-full max-w-lg border border-strong bg-[#000]"
               preload="metadata">
               <source :src="downloadLink" type="video/mp4" />
               <track :label="subtitleLang" kind="subtitles" v-if="subtitleUrl" :srclang="subtitleLang" :src="subtitleUrl" default />
