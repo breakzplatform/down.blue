@@ -248,7 +248,7 @@
           <span>{{ t.panelTitle }}</span>
         </h2>
         <div class="p-4">
-          <p class="mb-5"><strong>{{ t.heroStrong }}</strong> {{ t.heroRest }}</p>
+          <p class="mb-5" @click="toggleNetwork"><strong>{{ heroStrong }}</strong> {{ heroRest }}</p>
 
           <form @submit.prevent="findVideo" class="flex flex-wrap gap-2">
             <input v-model="postUrl" type="text" inputmode="url" autocomplete="off" class="db-input min-w-0 flex-1"
@@ -592,6 +592,12 @@
       return localStorage.getItem("theme") === "dark" ? "dark" : "light";
     }
 
+    // Easter egg: clicking the intro line swaps "Bluesky" for "Atmosphere".
+    function detectNetwork() {
+      try { return localStorage.getItem("network") === "Atmosphere" ? "Atmosphere" : "Bluesky"; }
+      catch { return "Bluesky"; }
+    }
+
     function detectLang() {
       const stored = localStorage.getItem("lang");
       if (stored === "pt" || stored === "en") return stored;
@@ -605,6 +611,7 @@
           ffmpeg: null,
           lang: detectLang(),
           theme: detectTheme(),
+          network: detectNetwork(),
           postUrl: "",
           postCid: "",
           status: "",
@@ -630,6 +637,8 @@
       },
       computed: {
         t() { return STRINGS[this.lang]; },
+        heroStrong() { return this.withNetwork(this.t.heroStrong); },
+        heroRest() { return this.withNetwork(this.t.heroRest); },
         // Errors and progress share one status line; the error strings are the
         // only ones that need the error colour, so match against them directly.
         statusIsError() {
@@ -690,6 +699,15 @@
           this.lang = this.lang === "pt" ? "en" : "pt";
           localStorage.setItem("lang", this.lang);
           document.documentElement.lang = this.lang === "pt" ? "pt-BR" : "en";
+        },
+        withNetwork(text) {
+          if (this.network === "Bluesky") return text;
+          // English needs "an" before the vowel; Portuguese "do" works for both.
+          return text.replaceAll("a Bluesky", "an Atmosphere").replaceAll("Bluesky", "Atmosphere");
+        },
+        toggleNetwork() {
+          this.network = this.network === "Bluesky" ? "Atmosphere" : "Bluesky";
+          try { localStorage.setItem("network", this.network); } catch {}
         },
         toggleTheme() {
           this.theme = this.theme === "dark" ? "light" : "dark";
@@ -895,6 +913,7 @@
           const input = String(postUrl ?? "").trim();
           let rawProfile;
           let rawPost;
+          let host = null;
           const atUri = input.match(/^at:\/\/([^/]+)\/app\.bsky\.feed\.post\/([^/?#]+)\/?$/);
           if (atUri) {
             [, rawProfile, rawPost] = atUri;
@@ -911,6 +930,7 @@
             const m = url.pathname.match(/^\/profile\/([^/]+)\/post\/([^/]+)\/?$/);
             if (!m) throw new Error("Invalid URL format");
             [, rawProfile, rawPost] = m;
+            host = url.hostname.replace(/\.$/, "").replace(/^www\./, "");
           }
           let profile;
           let post;
@@ -931,6 +951,8 @@
             profile,
             post,
             url: `https://bsky.app/profile/${profile}/post/${post}`,
+            // Came from another Atmosphere client or an at:// URI.
+            fromAtmosphere: host !== "bsky.app",
           };
         },
         // History links bind this, never the stored string. Invalid entries have no href.
@@ -1061,7 +1083,7 @@
             return;
           }
           this.postUrl = parsed.url;
-          const { profile, post } = parsed;
+          const { profile, post, fromAtmosphere } = parsed;
           const op = this.beginOperation();
           this.loadingMode = "find";
           this.progressBarVisible = true;
@@ -1083,6 +1105,7 @@
             const data = await threadRes.json();
             if (!this.operationOwns(op.id)) return;
             if (!data.thread?.post) throw new Error("Post not found");
+            if (fromAtmosphere && this.network !== "Atmosphere") this.toggleNetwork();
             this.progress = 45;
             this.postCid = data.thread.post.cid;
             this.currentPostData = {
