@@ -699,7 +699,11 @@
 
         // ---- History ----
         loadHistory() {
-          const saved = JSON.parse(localStorage.getItem("urlHistory") || "[]");
+          // Corrupt or unreadable storage must not abort startup; start empty instead.
+          let saved;
+          try { saved = JSON.parse(localStorage.getItem("urlHistory") || "[]"); }
+          catch { saved = []; }
+          if (!Array.isArray(saved)) saved = [];
           const seen = new Set();
           this.urlHistory = saved.slice(0, this.historyMaxEntries).flatMap(item => {
             const raw = typeof item === "string" ? item : item && item.url;
