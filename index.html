@@ -810,7 +810,8 @@
             if (!i) return true;
             return (typeof i === "string" ? i : i.url || "") !== url;
           });
-          localStorage.setItem("urlHistory", JSON.stringify(this.urlHistory));
+          try { localStorage.setItem("urlHistory", JSON.stringify(this.urlHistory)); }
+          catch (err) { console.warn("Could not persist history", err); }
         },
         fillAndFind(historyItem) {
           if (this.loadingMode !== null) return;
@@ -1574,21 +1575,24 @@
         },
         parseHighestQualityVideoUrl(master, baseUrl) {
           let best = 0, url = "";
-          const lines = master.split("\n");
+          const lines = master.split(/\r?\n/).map(l => l.trim());
           lines.forEach((line, i) => {
             if (line.startsWith("#EXT-X-STREAM-INF")) {
               const m = line.match(/BANDWIDTH=(\d+)/);
               if (m) {
-                const bw = parseInt(m[1]);
-                if (bw > best) { best = bw; url = lines[i + 1]; }
+                const bw = parseInt(m[1], 10);
+                if (bw > best && lines[i + 1]) { best = bw; url = lines[i + 1]; }
               }
             }
           });
+          // An empty url would resolve to the master playlist itself.
+          if (!url) throw new Error("No video stream in HLS playlist");
           return new URL(url, baseUrl).toString();
         },
         parseSegmentUrls(variant, baseUrl) {
-          return variant.split("\n")
-            .filter(l => !l.startsWith("#") && l.trim() !== "")
+          return variant.split(/\r?\n/)
+            .map(l => l.trim())
+            .filter(l => l !== "" && !l.startsWith("#"))
             .map(s => new URL(s, baseUrl).toString());
         },
         async downloadSegments(urls, signal) {
