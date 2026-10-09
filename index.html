@@ -79,9 +79,6 @@
     }
     .db-btn-sm { padding: 4px 7px; font-size: var(--text-meta); }
 
-    /* The theme switch: three small buttons, the current one filled with ink. */
-    .db-theme { display: flex; gap: var(--space-4); }
-    .db-theme .db-btn[aria-pressed="true"] { background: var(--text-1); color: var(--text-inverse); }
 
     /* Picking a format is a step, not a toolbar, so it gets its own rule and
        title. None of the three is filled: a filled button here reads as "already
@@ -206,10 +203,23 @@
     <div class="mx-auto max-w-[880px] px-6 pb-16">
       <div class="flex flex-wrap items-center justify-end gap-2 pt-4">
         <button @click="toggleLang" :lang="lang === 'pt' ? 'en' : 'pt-BR'" class="db-btn db-btn-sm cast press">{{ lang === 'pt' ? 'english' : 'português' }}</button>
-        <div class="db-theme" role="group" :aria-label="t.themeGroup">
-          <button v-for="name in themes" :key="name" type="button" @click="setTheme(name)" :aria-pressed="theme === name ? 'true' : 'false'"
-            class="db-btn db-btn-sm cast press">{{ t.themeNames[name] }}</button>
-        </div>
+        <!-- One button cycles light -> dark -> terminal. Like the language
+             toggle beside it, it names where a tap takes you: label and icon
+             show the next theme; aria-label states both. -->
+        <button type="button" @click="cycleTheme" :aria-label="themeButtonLabel" class="db-btn db-btn-sm cast press">
+          <svg v-if="nextTheme === 'dark'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+            <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
+          </svg>
+          <svg v-else-if="nextTheme === 'terminal'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+            <path d="M12 19h8" /><path d="m4 17 6-6-6-6" />
+          </svg>
+          <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" />
+            <path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
+          </svg>
+          <span>{{ t.themeNames[nextTheme] }}</span>
+        </button>
       </div>
 
       <main>
@@ -446,7 +456,7 @@
         partOf: "part of",
         byAuthor: "by",
         viewSource: "View-source",
-        themeGroup: "theme",
+        themeButton: "Theme: {current}, tap for {next}",
         themeNames: { light: "light", dark: "dark", terminal: "terminal" },
         panelTitle: "Download a video",
         heroStrong: "Download Bluesky videos and GIFs directly in your browser!",
@@ -520,7 +530,7 @@
         partOf: "parte do",
         byAuthor: "por",
         viewSource: "Ver código",
-        themeGroup: "tema",
+        themeButton: "Tema: {current}, toque para {next}",
         themeNames: { light: "claro", dark: "escuro", terminal: "terminal" },
         panelTitle: "Baixar um vídeo",
         heroStrong: "Baixe vídeos e GIFs do Bluesky direto no seu navegador!",
@@ -643,6 +653,14 @@
         };
       },
       computed: {
+        nextTheme() {
+          return THEMES[(THEMES.indexOf(this.theme) + 1) % THEMES.length];
+        },
+        themeButtonLabel() {
+          return this.t.themeButton
+            .replace("{current}", this.t.themeNames[this.theme])
+            .replace("{next}", this.t.themeNames[this.nextTheme]);
+        },
         t() { return STRINGS[this.lang]; },
         heroStrong() { return this.withNetwork(this.t.heroStrong); },
         heroRest() { return this.withNetwork(this.t.heroRest); },
@@ -713,6 +731,9 @@
         toggleNetwork() {
           this.network = this.network === "Bluesky" ? "Atmosphere" : "Bluesky";
           try { localStorage.setItem("network", this.network); } catch {}
+        },
+        cycleTheme() {
+          this.setTheme(this.nextTheme);
         },
         setTheme(name) {
           if (!THEMES.includes(name)) return;
