@@ -78,7 +78,11 @@ The CSS is Tailwind v4, compiled ahead of time. After changing Tailwind classes 
 ./scripts/build-css.sh
 ```
 
-The script installs the pinned Tailwind CLI with pnpm the first time it runs. The default Tailwind palette, radii and shadows are disabled on purpose, so use the design system names (`bg-surface-page`, `text-text-2`, `shadow-2` and so on).
+The script installs the pinned Tailwind CLI with pnpm the first time it runs. The default Tailwind palette, radii and shadows are disabled on purpose, so use the design system names (`bg-surface-page`, `text-text-2` and so on). There are no shadow utilities: the hard shadow is a halftone dot field, added with the design system classes `cast` (bordered block with the dot shadow), `press` (buttons: lift on hover, flat on press) and `lift` (cards).
+
+### Themes
+
+There are three themes: light (the default), dark and terminal (amber on black). The choice is manual only: the page never reads `prefers-color-scheme`. The buttons at the top store the choice in `localStorage` under `theme`, and a small inline script in `<head>` applies it before the first paint. Every colour token has a value for each theme in `scripts/ds/tokens/` (`colors.css`, `dark.css`, `terminal.css`), copied verbatim from the joseli.to design system; replace the directory to update it, never edit it here.
 
 ### Changing the preview image, banner or icons
 
@@ -96,7 +100,7 @@ There are no automated tests yet. The HLS parsers (`parseHighestQualityVideoUrl`
 
 ## Contributing
 
-Issues and pull requests are welcome. Please test in a browser before sending a change: a regular video, a quote post, an invalid link, and both the light and dark themes. The page promises no analytics, so any telemetry has to be opt-in.
+Issues and pull requests are welcome. Please test in a browser before sending a change: a regular video, a quote post, an invalid link, and all three themes (light, dark and terminal). The page promises no analytics, so any telemetry has to be opt-in.
 
 ## Support
 

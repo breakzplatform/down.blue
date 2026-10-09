@@ -42,7 +42,8 @@ trap cleanup EXIT
 
 if [ ! -x "${SCRIPT_DIR}/node_modules/.bin/tailwindcss" ]; then
   echo "installing pinned dependencies from pnpm-lock.yaml..."
-  (cd "${SCRIPT_DIR}" && pnpm install --frozen-lockfile --silent)
+  # pnpm < 10 ignores allowBuilds in pnpm-workspace.yaml; nothing here needs a build script.
+  (cd "${SCRIPT_DIR}" && pnpm install --frozen-lockfile --ignore-scripts --silent)
 fi
 
 rm -rf "${WORK}"

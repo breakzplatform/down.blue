@@ -13,32 +13,40 @@
        @import "tailwindcss";
        @import "../tokens/fonts.css";
        @import "../tokens/colors.css";
+       @import "../tokens/dark.css";
+       @import "../tokens/terminal.css";
        @import "../tokens/typography.css";
        @import "../tokens/spacing.css";
        @import "../tokens/borders.css";
-       @import "../tokens/neo.css";
-       @import "../tokens/dark.css";
+       @import "../tokens/halftone.css";
        @import "../tokens/base.css";
+       @import "../tokens/neo.css";
+       @import "../components.css";   (optional: the class-based components)
        @import "./theme.css";
        @source "../index.html";
 
-       :root { --project-ink: var(--ink-cyan); --project-ink-contrast: var(--on-cyan); }
+       :root, [data-theme] { --project-ink: var(--ink-cyan); --project-ink-contrast: var(--on-cyan); }
 
    Two things to know. `tokens/base.css` must come after Tailwind's preflight, so
-   keep it in that order. And `tokens/dark.css` reasserts `--project-ink`, so a
-   project that picks an ink has to restate it under `[data-theme="dark"]` too,
-   after these imports, or the dark theme silently reverts it to blue.
+   keep it in that order. And every theme block (`colors.css`, `dark.css`,
+   `terminal.css`) sets `--project-ink`, so a project that picks an ink sets it
+   on `:root, [data-theme]` AFTER these imports: one rule, all three themes, and
+   `var(--ink-cyan)` resolves to the right value in each.
 
    Tailwind's stock colour, radius and shadow palettes are reset to `initial`.
    There is no `bg-slate-50`, no `rounded-lg`, no `shadow-md` in this brand — a
    utility that silently does nothing is the system telling you the value does
-   not exist. Radius is 0 everywhere; the only shadows are the three hard offset
-   steps, and they are never blurred, never grey, never translucent.
+   not exist. Radius is 0 everywhere. v2 has no box-shadow at all: the shadow is
+   the halftone dot field of the `.cast` class (tokens/neo.css), which a
+   box-shadow cannot express, so there are no `shadow-*` utilities. Add the
+   `cast` / `press` / `lift` classes in markup instead.
 
    Utilities are theme-aware for free: every `--color-*` entry points at a DS
-   variable that `dark.css` redefines, so `bg-surface-card` flips to black and
-   `text-text-1` to amber the moment `data-theme="dark"` lands on `<html>`.
-   Nothing needs a `dark:` variant.
+   variable that `dark.css` redefines, so `bg-surface-card` and `text-text-1`
+   follow the moment `data-theme="dark"` or `data-theme="terminal"` lands on
+   `<html>` (or on any element, to scope a themed island). Nothing needs a
+   `dark:` variant, and none should be added: the theme is manual, never
+   prefers-color-scheme.
    --------------------------------------------------------------------------- */
 
 @theme static {
@@ -50,21 +58,38 @@
   --tracking-*: initial;
   --leading-*: initial;
 
-  /* canon */
-  --color-paper: var(--paper);
-  --color-canon-black: var(--black);
+  /* surfaces and text */
+  --color-surface-page: var(--surface-page);
+  --color-surface-card: var(--surface-card);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-fill: var(--surface-fill);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-text-inverse: var(--text-inverse);
+
+  /* links */
   --color-link: var(--link);
   --color-link-visited: var(--link-visited);
   --color-link-active: var(--link-active);
-  --color-netscape-gray: var(--netscape-gray);
 
-  /* neutrals */
-  --color-gray-90: var(--gray-90);
-  --color-gray-70: var(--gray-70);
-  --color-gray-50: var(--gray-50);
-  --color-gray-30: var(--gray-30);
-  --color-gray-15: var(--gray-15);
-  --color-gray-06: var(--gray-06);
+  /* lines, shadow, focus (border-strong / border-hairline / border-dotted) */
+  --color-strong: var(--border-strong);
+  --color-hairline: var(--border-hairline);
+  --color-dotted: var(--border-dotted);
+  --color-shadow: var(--shadow-color);
+  --color-halftone-dot: var(--halftone-dot);
+  --color-focus-ring: var(--focus-ring);
+
+  /* project ink, spot, status — each with its on-* partner */
+  --color-project-ink: var(--project-ink);
+  --color-project-ink-contrast: var(--project-ink-contrast);
+  --color-spot: var(--spot);                  --color-on-spot: var(--on-spot);
+  --color-status-ok: var(--status-ok);        --color-on-ok: var(--on-ok);
+  --color-status-warn: var(--status-warn);    --color-on-warn: var(--on-warn);
+  --color-status-error: var(--status-error);  --color-on-error: var(--on-error);
+  --color-ink-down: var(--ink-down);          --color-on-down: var(--on-down);
+  --color-ink-pix: var(--ink-pix);            --color-on-pix: var(--on-pix);
 
   /* the sixteen inks and their legible partners */
   --color-ink-blue: var(--ink-blue);          --color-on-blue: var(--on-blue);
@@ -84,24 +109,6 @@
   --color-ink-brown: var(--ink-brown);        --color-on-brown: var(--on-brown);
   --color-ink-graphite: var(--ink-graphite);  --color-on-graphite: var(--on-graphite);
 
-  /* semantic — what markup should reach for */
-  --color-text-1: var(--text-1);
-  --color-text-2: var(--text-2);
-  --color-text-3: var(--text-3);
-  --color-text-inverse: var(--text-inverse);
-  --color-surface-page: var(--surface-page);
-  --color-surface-sunken: var(--surface-sunken);
-  --color-surface-fill: var(--surface-fill);
-  --color-surface-card: var(--surface-card);
-  --color-strong: var(--border-strong);
-  --color-hairline: var(--border-hairline);
-  --color-dotted: var(--border-dotted);
-  --color-project-ink: var(--project-ink);
-  --color-project-ink-contrast: var(--project-ink-contrast);
-  --color-status-ok: var(--status-ok);
-  --color-status-warn: var(--status-warn);
-  --color-status-error: var(--status-error);
-
   /* type */
   --font-display: var(--font-display);
   --font-display-sans: var(--font-display-sans);
@@ -115,7 +122,10 @@
   --text-display-2: var(--text-display-2);
   --text-display-3: var(--text-display-3);
   --text-display-4: var(--text-display-4);
+  --text-feed-title: var(--text-feed-title);
+  --text-kicker: var(--text-kicker);
   --text-title: var(--text-title);
+  --text-reading: var(--text-reading);
   --text-title-sm: var(--text-title-sm);
   --text-body: var(--text-body);
   --text-body-sm: var(--text-body-sm);
@@ -133,10 +143,6 @@
   --tracking-meta: var(--tracking-meta);
   --tracking-micro: var(--tracking-micro);
 
-  /* The three hard steps, as `shadow-1` / `shadow-2` / `shadow-3`. Radius stays
-     absent on purpose: `rounded-*` generating nothing is the point. */
+  /* Radius stays absent on purpose: `rounded-*` generating nothing is the point. */
   --radius-none: 0;
-  --shadow-1: var(--shadow-1);
-  --shadow-2: var(--shadow-2);
-  --shadow-3: var(--shadow-3);
 }

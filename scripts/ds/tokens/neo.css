@@ -1,25 +1,78 @@
 /* ---------------------------------------------------------------------------
-   Neobrutalist surface layer.
-   Three classes carry the whole language, so a consumer never hand-rolls the
-   shadow maths. Compose them: class="neo neo-press".
+   The surface layer: halftone cast, press, lift, ink block, tilt.
 
-     .neo        a block: 2px ink border, hard 5px offset shadow, flat fill
-     .neo-sm/lg  same block at the small (3px) or large (8px) shadow step
-     .neo-press  interactive: lifts away from the shadow on hover, then slams
-                 flat into it on press. Use on buttons and links-as-blocks.
-     .neo-lift   hover lift with no press state. Use on cards and tiles.
+     .cast        a block: 2px ink border, opaque fill, and a hard shadow made
+                  of a dot field offset --shadow-offset. Needs an opaque
+                  background (it gets --surface-card unless you set one).
+     .cast-flat   same block, no shadow (a nested block inside a casting one).
+     .press       interactive: lifts 2px toward the light on hover (shadow grows
+                  to 9px), slams flat into the shadow on press (offset 0).
+                  Buttons, chips, links-as-blocks.
+     .lift        hover lift with no press state. Cards and tiles.
+     .ink-block   the highlight block behind a title or the wordmark suffix.
+     .tilt        rotates an .ink-block (-1.5deg); .tilt-cw +1.5deg; .tilt-strong -2deg.
+     .screen      a halftone image field (portrait, thumbnail, placeholder);
+                  set --dot-ink to pick the ink.
 
-   Rules of the layer: one shadow step per view, never two nested blocks that
-   both cast, and never a shadow on something that cannot be touched or read as
-   raised (body text, table rows, hairline dividers).
+   Rules: one cast per view region, never two nested blocks that both cast,
+   never a shadow on something that cannot be touched or read as raised. Only
+   ink blocks tilt; text, panels and controls stay square.
+
+   v1 names (.neo, .neo-press, .neo-lift, .neo-flat, .neo-sm, .neo-lg) still
+   work as aliases. There is no size step any more: one offset per breakpoint.
    --------------------------------------------------------------------------- */
-.neo{border:var(--border);box-shadow:var(--shadow-2);background:var(--surface-card);border-radius:0}
-.neo-sm{box-shadow:var(--shadow-1)}
-.neo-lg{box-shadow:var(--shadow-3)}
-.neo-flat{box-shadow:none}
-.neo-press,.neo-lift{transition:transform var(--motion-fast) var(--easing),box-shadow var(--motion-fast) var(--easing)}
-.neo-press:hover,.neo-lift:hover{transform:translate(calc(var(--press-offset) * -1),calc(var(--press-offset) * -1));box-shadow:var(--shadow-3)}
-.neo-press:active{transform:translate(var(--press-offset),var(--press-offset));box-shadow:var(--shadow-none)}
-.neo-press:disabled,.neo-press[aria-disabled="true"]{transform:none;box-shadow:var(--shadow-1)}
-.neo-press.neo-sm:hover,.neo-lift.neo-sm:hover{box-shadow:var(--shadow-2)}
-@media (prefers-reduced-motion:reduce){.neo-press,.neo-lift{transition:none}.neo-press:hover,.neo-lift:hover{transform:none}}
+.cast,.neo{
+  position:relative;isolation:isolate;
+  border:var(--border);border-radius:0;
+  background-color:var(--surface-card);
+}
+.cast::after,.neo::after{
+  --dot-field:radial-gradient(circle at 50% 50%,var(--shadow-color) var(--dot-radius),transparent calc(var(--dot-radius) + 0.5px));
+  content:"";position:absolute;inset:calc(var(--border-width) * -1);z-index:-2;pointer-events:none;
+  transform:translate(var(--shadow-offset),var(--shadow-offset));
+  background:var(--dot-field) 0 0/var(--dot-pitch) var(--dot-pitch);
+}
+/* The block's own fill, repainted above the dot field: inside an isolated
+   block a negative z-index child paints over the block's background, so the
+   dots would otherwise screen the block's own content. */
+.cast::before,.neo::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:inherit}
+.cast-flat::after,.neo-flat::after{background:none}
+
+.press,.lift,.neo-press,.neo-lift,
+.press::after,.lift::after,.neo-press::after,.neo-lift::after{transition:transform var(--motion-fast) var(--easing)}
+.press:hover,.lift:hover,.neo-press:hover,.neo-lift:hover{transform:translate(calc(var(--press-travel) * -1),calc(var(--press-travel) * -1))}
+.press:hover::after,.lift:hover::after,.neo-press:hover::after,.neo-lift:hover::after{transform:translate(var(--shadow-offset-hover),var(--shadow-offset-hover))}
+.press:active,.neo-press:active{transform:translate(var(--press-travel),var(--press-travel))}
+.press:active::after,.neo-press:active::after{transform:translate(var(--shadow-offset-pressed),var(--shadow-offset-pressed));background:none}
+.press:disabled,.press[aria-disabled="true"],.neo-press:disabled,.neo-press[aria-disabled="true"]{transform:none}
+.press:disabled::after,.press[aria-disabled="true"]::after,.neo-press:disabled::after,.neo-press[aria-disabled="true"]::after{transform:none;background:none}
+@media (prefers-reduced-motion:reduce){
+  .press,.lift,.neo-press,.neo-lift,.press::after,.lift::after,.neo-press::after,.neo-lift::after{transition:none}
+  .press:hover,.lift:hover,.neo-press:hover,.neo-lift:hover{transform:none}
+  .press:hover::after,.lift:hover::after,.neo-press:hover::after,.neo-lift:hover::after{transform:translate(var(--shadow-offset),var(--shadow-offset))}
+}
+
+/* The ink block. inline-block + line-height .92 sizes it from the line box,
+   not from Computer Modern's very tall ascent/descent; the deeper bottom
+   padding sits it on the optical centre of the caps. */
+.ink-block{
+  display:inline-block;line-height:.92;padding:.06em .07em .1em;
+  background:var(--ink,var(--project-ink));color:var(--on-ink,var(--project-ink-contrast));
+}
+.tilt{transform:rotate(var(--tilt))}
+.tilt-cw{transform:rotate(var(--tilt-cw))}
+.tilt-strong{transform:rotate(var(--tilt-strong))}
+
+.screen{
+  --screen-field:radial-gradient(circle at calc(var(--screen-pitch) / 2) calc(var(--screen-pitch) / 2),var(--dot-ink,var(--halftone-dot)) var(--screen-radius),transparent calc(var(--screen-radius) + 0.5px));
+  background-color:var(--surface-card);
+  background-image:var(--screen-field);
+  background-size:var(--screen-pitch) var(--screen-pitch);
+}
+
+/* 1x screens: anti-aliased round dots of 1-2 device px smear into grey and
+   beat. Square dots snapped to whole px stay crisp: a 2x2 block per cell. */
+@media (max-resolution:1.49dppx){
+  .cast::after,.neo::after{--dot-field:conic-gradient(from 270deg at 2px 2px,var(--shadow-color) 25%,transparent 0)}
+  .screen{--screen-field:conic-gradient(from 270deg at 3px 3px,var(--dot-ink,var(--halftone-dot)) 25%,transparent 0)}
+}
