@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<!-- Source for avatar-v2.png, the @down.blue profile picture (1000x1000). Render
+     with scripts/build-social.sh. Bluesky crops it to a circle: the tilted block
+     and its dot shadow stay inside the inscribed circle (corners at ~r 410). -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="../assets/tailwind-4.3.3.css" />
+  <style>
+    html, body { margin: 0; width: 1000px; height: 1000px; overflow: hidden; background: var(--surface-page); }
+    .frame { width: 1000px; height: 1000px; display: flex; align-items: center; justify-content: center; }
+    .mark {
+      --dot-pitch: 12px; --dot-radius: 4px; --shadow-offset: 26px;
+      --border-width: 10px; --border: 10px solid var(--border-strong);
+      box-sizing: border-box; width: 520px; height: 520px; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      margin: -26px 0 0 -26px; /* centre the block together with its shadow */
+    }
+    /* A rendered image, not a screen: keep the round dots at 1x. */
+    .mark.cast::after { --dot-field: radial-gradient(circle at 50% 50%, var(--shadow-color) var(--dot-radius), transparent calc(var(--dot-radius) + 0.5px)); }
+    .mark svg { width: 64%; height: 64%; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div class="mark ink-block cast tilt-cw">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <g fill="none" stroke="var(--project-ink-contrast)" stroke-width="12" stroke-linecap="square" stroke-linejoin="miter">
+          <path d="M50 8v50M22 36l28 28 28-28M16 90h68"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>

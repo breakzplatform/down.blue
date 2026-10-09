@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- Source for banner.png, the @down.blue profile banner (3000x1000). Render with
      scripts/build-social.sh. Bluesky lays the avatar over the bottom left corner,
-     so the content sits right of centre and clear of it. -->
+     so the wordmark and tagline sit right of centre, lifted off the bottom edge. -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -9,14 +9,20 @@
   <style>
     html, body { margin: 0; width: 3000px; height: 1000px; overflow: hidden; background: var(--surface-page); }
     .frame {
-      box-sizing: border-box; width: 3000px; height: 1000px; padding: 0 200px 0 760px;
-      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 72px;
+      box-sizing: border-box; width: 3000px; height: 1000px; padding: 0 240px 120px 760px;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 64px;
+    }
+    .wordmark {
+      margin: 0;
+      font: var(--weight-display) 300px/1.1 var(--font-display);
+      letter-spacing: var(--tracking-display);
+      color: var(--text-1); white-space: nowrap;
     }
     .tagline {
-      --dot-pitch: 10px; --dot-radius: 3.5px; --shadow-offset: 18px;
-      --border-width: 6px; --border: 6px solid var(--border-strong);
-      margin: 0; padding: 44px 64px;
-      font: var(--weight-bold) 64px/1.3 var(--font-mono); white-space: nowrap;
+      --dot-pitch: 8px; --dot-radius: 2.75px; --shadow-offset: 14px;
+      --border-width: 4px; --border: 4px solid var(--border-strong);
+      margin: 0; padding: 22px 36px;
+      font: var(--weight-bold) 44px/1.3 var(--font-mono); white-space: nowrap;
       letter-spacing: var(--tracking-meta); text-transform: uppercase; color: var(--text-1);
     }
     /* A rendered image, not a screen: keep the round dots at 1x. */
@@ -25,6 +31,7 @@
 </head>
 <body>
   <div class="frame">
+    <h1 class="wordmark">down<span class="ink-block tilt-cw">.blue</span></h1>
     <p class="tagline cast">A Bluesky (and Atmosphere) video downloader</p>
   </div>
 </body>

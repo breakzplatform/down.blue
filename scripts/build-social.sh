@@ -2,6 +2,7 @@
 # Renders the HTML social images with headless Chrome:
 #   scripts/og.html     -> og.png (1200x630, link preview, deployed)
 #   scripts/banner.html -> scripts/banner.png (3000x1000, @down.blue profile banner)
+#   scripts/avatar.html -> scripts/avatar-v2.png (1000x1000, @down.blue profile picture)
 # The pages need an HTTP origin: fonts come from static.joseli.to under CORS.
 set -euo pipefail
 
@@ -52,3 +53,4 @@ render() {
 
 render scripts/og.html 1200 630 og.png
 render scripts/banner.html 3000 1000 scripts/banner.png
+render scripts/avatar.html 1000 1000 scripts/avatar-v2.png
