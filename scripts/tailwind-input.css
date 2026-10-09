@@ -15,35 +15,26 @@
 
 @import "./ds/tokens/fonts.css";
 @import "./ds/tokens/colors.css";
+@import "./ds/tokens/dark.css";
+@import "./ds/tokens/terminal.css";
 @import "./ds/tokens/typography.css";
 @import "./ds/tokens/spacing.css";
 @import "./ds/tokens/borders.css";
-@import "./ds/tokens/neo.css";
-@import "./ds/tokens/dark.css";
+@import "./ds/tokens/halftone.css";
 @import "./ds/tokens/base.css";
+@import "./ds/tokens/neo.css";
 
 @import "./tailwind-theme.css";
 
 @source "../index.html";
 
-/* down.blue runs on its own teal rather than one of the design system's
-   sixteen. It is a dark ink, so every surface painted with it takes white text
-   — 4.65:1, against 4.51:1 for black, so white is both the system's convention
-   for dark inks and the more legible of the two. */
-:root {
-  --ink-down: #018281;
-  --on-down: #FFFFFF;
-  --project-ink: var(--ink-down);
-  --project-ink-contrast: var(--on-down);
-}
-
-/* Two separate jobs in one block. ds/tokens/dark.css reasserts --project-ink as
-   blue, so it has to be restated here or the dark theme reverts it. And the ink
-   itself becomes the theme's amber: dark mode is a monochrome CRT, and one
-   colour arriving from the light theme is the thing that breaks it. */
-:root[data-theme="dark"] {
-  --ink-down: var(--ink-amber);
-  --on-down: var(--on-amber);
+/* down.blue runs on its own teal, --ink-down, which the design system defines
+   for all three themes (#018281 light, #149C98 dark, amber in terminal) with
+   its --on-down partner. One rule picks it for every theme: it sits on
+   `:root, [data-theme]` after the imports, so it beats each theme block's
+   default project ink and resolves to that theme's value. */
+:root,
+[data-theme] {
   --project-ink: var(--ink-down);
   --project-ink-contrast: var(--on-down);
 }

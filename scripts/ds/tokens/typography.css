@@ -1,7 +1,8 @@
 :root{
-/* Computer Modern all the way down: CMU Serif for display, numerals and the
-   wordmark; CMU Sans Serif for everything you actually read; CM Typewriter for
-   meta, code and labels. system-ui is the fallback, not the default. */
+/* Computer Modern all the way down: CMU Serif for display, headlines, rank
+   numerals and the wordmark; CMU Sans Serif for everything you read; CMU
+   Typewriter for what is set in CAPS (meta, labels, kickers, code).
+   v2: display is CMU Serif BOLD (700), tracked -0.02em. */
 --font-display:"CMU Serif","Latin Modern Roman","Computer Modern Serif",Georgia,"Times New Roman",serif;
 --font-display-sans:"CMU Sans Serif","Latin Modern Sans",system-ui,sans-serif;
 --font-body:"CMU Sans Serif","Latin Modern Sans",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
@@ -12,7 +13,10 @@
 --text-display-2:40px;
 --text-display-3:34px;
 --text-display-4:26px;
+--text-feed-title:21px;
+--text-kicker:20px;
 --text-title:19px;
+--text-reading:17px;
 --text-title-sm:17px;
 --text-body:15px;
 --text-body-sm:13.5px;
@@ -26,22 +30,30 @@
 --leading-reading:1.65;
 
 --weight-normal:400;
---weight-semibold:600;
+/* No CM family has a 600: semibold resolves to the real 700 face. */
+--weight-semibold:700;
 --weight-bold:700;
+--weight-display:700;
 
---tracking-display:-0.015em;
+--tracking-display:-0.02em;
 --tracking-normal:0;
 --tracking-meta:0.08em;
 --tracking-micro:0.11em;
 
 /* composed roles */
---type-wordmark:var(--weight-normal) 34px/1 var(--font-display);
---type-display:var(--weight-normal) var(--text-display-2)/var(--leading-display) var(--font-display);
---type-rank:var(--weight-normal) var(--text-display-4)/1 var(--font-display);
---type-title:var(--weight-semibold) var(--text-title-sm)/var(--leading-title) var(--font-body);
---type-body:var(--weight-normal) var(--text-body)/var(--leading-body) var(--font-body);
+--type-wordmark:var(--weight-display) 34px/1.05 var(--font-display);
+--type-display:var(--weight-display) var(--text-display-2)/var(--leading-display) var(--font-display);
+--type-rank:var(--weight-display) var(--text-display-4)/1 var(--font-display);
+--type-feed-title:var(--weight-display) var(--text-feed-title)/1.3 var(--font-display);
+--type-kicker:var(--weight-bold) var(--text-kicker)/1.2 var(--font-mono);
+--type-title:var(--weight-bold) var(--text-title)/var(--leading-title) var(--font-body);
+--type-body:var(--weight-normal) var(--text-reading)/var(--leading-body) var(--font-body);
+--type-compact:var(--weight-normal) var(--text-body)/var(--leading-body) var(--font-body);
+--type-reading:var(--weight-normal) var(--text-reading)/var(--leading-reading) var(--font-body);
 --type-dek:var(--weight-normal) var(--text-body-sm)/1.5 var(--font-body);
+--type-caption:var(--weight-normal) var(--text-caption)/1.4 var(--font-body);
 --type-meta:var(--weight-normal) var(--text-meta)/1.4 var(--font-mono);
---type-label:var(--weight-normal) var(--text-micro)/1 var(--font-mono);
+--type-label:var(--weight-bold) var(--text-micro)/1.2 var(--font-mono);
+--type-micro:var(--weight-bold) var(--text-micro)/1.2 var(--font-mono);
 --type-code:var(--weight-normal) var(--text-caption)/1.5 var(--font-mono);
 }

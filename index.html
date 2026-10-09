@@ -23,37 +23,23 @@
   <meta name="twitter:image" content="https://down.blue/og.png" />
   <link rel="stylesheet" href="assets/tailwind-4.3.3.css" />
   <style>
-    /* down.blue components, built on the joseli.to design system tokens that
-       scripts/tailwind-input.css compiles into the stylesheet above. Nothing
-       here invents a value: every colour, rule, gap and font is a token. */
+    /* down.blue components, built on the joseli.to design system (v2, "retícula")
+       that scripts/tailwind-input.css compiles into the stylesheet above. Nothing
+       here invents a value: every colour, rule, gap and font is a token, and the
+       halftone shadow, press and lift mechanics come from the system's .cast /
+       .press / .lift classes in the markup. */
 
-    /* CM Sans has a smaller x-height than a system ui font, so the 15px step
-       reads smaller than it did on system-ui. The design system's rule is to
-       take the 17px step for running copy; only the size moves, the leading
-       stays where the --type-body shorthand put it. */
-    body { font-size: var(--text-title-sm); }
-
-    /* The wordmark: the name in Computer Modern, the suffix carried by the
-       project ink. The ink fills a block behind `.blue` rather than colouring
-       the letters — the same treatment every other ink surface gets, and the
-       only one that clears WCAG on both papers.
-       It runs past the top of the type scale (52px) on purpose: this is a
-       one-page tool and the masthead is the only display type it has. */
+    /* The wordmark: the name in CMU Serif bold, the suffix an ink block tilted
+       +1.5deg like a sticker (.ink-block.tilt-cw). It runs past the top of the
+       type scale on purpose: this is a one-page tool and the masthead is the
+       only display type it has. */
     .db-wordmark {
       margin: var(--space-10) 0 var(--space-6);
-      font: var(--weight-normal) clamp(var(--text-display-1), 13vw, 116px)/1.1 var(--font-display);
+      font: var(--weight-display) clamp(var(--text-display-1), 13vw, 116px)/1.1 var(--font-display);
       letter-spacing: var(--tracking-display);
       color: var(--text-1);
       text-align: center;
-    }
-    /* inline-block so the block is sized by line-height rather than by Computer
-       Modern's very tall ascent/descent, which would float it off the letters. */
-    .db-wordmark-suffix {
-      display: inline-block;
-      line-height: 0.92;
-      padding: 0.06em 0.07em 0.1em;
-      background: var(--project-ink);
-      color: var(--project-ink-contrast);
+      white-space: nowrap;
     }
 
     /* Meta lines, tags and labels: typewriter, uppercase, tracked out. */
@@ -62,39 +48,40 @@
     /* Running machine output and fine print: typewriter, but readable. */
     .db-note { font: var(--type-code); color: var(--text-3); }
 
-    /* One rule decides the face, everywhere: anything set in CAPS is typewriter,
-       anything read as a sentence is the reader's own UI font, and Computer
-       Modern serif is reserved for the wordmark. So every box title — panel
-       head, callout spine — is the same object, and no box invents its own. */
-    .db-panel { border: var(--border); background: var(--surface-card); box-shadow: var(--shadow-2); }
+    /* Every box title — panel head, callout spine — is the same object: an ink
+       block in typewriter caps. The panel itself carries .cast. */
+    .db-panel { background: var(--surface-card); }
     .db-panel-head {
       display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
       margin: 0; padding: var(--box-head-pad); border-bottom: var(--border);
       background: var(--project-ink); color: var(--project-ink-contrast);
-      font: var(--weight-bold) var(--text-caption)/1.4 var(--font-mono);
+      font: var(--weight-bold) var(--text-caption)/1.3 var(--font-mono);
       letter-spacing: var(--tracking-meta); text-transform: uppercase;
     }
 
-    /* Buttons carry only their type and colour. The movement — lift toward the
-       light on hover, slam flat into the shadow on press — comes from the design
-       system's .neo-press, which the markup adds, so the offsets are never
-       computed here. Colour no longer changes on hover: the block moves instead.
-       Links still invert, and base.css exempts anything with a `neo` class from
-       that rule, which is why these do not need to opt out by hand. */
+    /* Buttons carry only their type and colour; .cast.press in the markup does
+       the halftone shadow, the lift on hover and the slam on press. */
     .db-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
-      border: var(--border); background: var(--surface-page); color: var(--text-1);
-      box-shadow: var(--shadow-2);
-      font: var(--weight-semibold) var(--text-body-sm)/1.25 var(--font-body);
-      padding: 9px 12px; cursor: pointer; text-align: center; text-decoration: none;
+      background: var(--surface-page); color: var(--text-1);
+      font: var(--weight-bold) var(--text-body-sm)/1.25 var(--font-body);
+      padding: 8px 12px; cursor: pointer; text-align: center; text-decoration: none;
     }
-    a.db-btn, a.db-btn:visited, a.db-btn:hover { color: var(--text-1); text-decoration: none; }
-    .db-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    a.db-btn, a.db-btn:visited, a.db-btn:hover { color: var(--text-1); background: var(--surface-page); text-decoration: none; }
     .db-btn-primary, a.db-btn-primary, a.db-btn-primary:visited, a.db-btn-primary:hover {
       background: var(--project-ink); border-color: var(--project-ink); color: var(--project-ink-contrast);
     }
     .db-btn-danger { background: var(--ink-red); border-color: var(--ink-red); color: var(--on-red); }
-    .db-btn-sm { padding: 4px 7px; font-size: var(--text-meta); box-shadow: var(--shadow-1); }
+    /* Disabled: no travel, no shadow (.press handles both), a sunken fill and
+       the second text colour. Never an opacity fade. */
+    .db-btn:disabled, .db-btn-primary:disabled, .db-btn-danger:disabled {
+      background: var(--surface-sunken); border-color: var(--border-strong); color: var(--text-2); cursor: not-allowed;
+    }
+    .db-btn-sm { padding: 4px 7px; font-size: var(--text-meta); }
+
+    /* The theme switch: three small buttons, the current one filled with ink. */
+    .db-theme { display: flex; gap: var(--space-4); }
+    .db-theme .db-btn[aria-pressed="true"] { background: var(--text-1); color: var(--text-inverse); }
 
     /* Picking a format is a step, not a toolbar, so it gets its own rule and
        title. None of the three is filled: a filled button here reads as "already
@@ -115,85 +102,74 @@
       flex-direction: column; align-items: flex-start; gap: var(--space-2);
       padding: var(--space-5); text-align: left; width: 100%;
     }
-    .db-mode-label { font: var(--weight-semibold) var(--text-body)/1.25 var(--font-body); }
+    .db-mode-label { font: var(--weight-bold) var(--text-body)/1.25 var(--font-body); }
 
+    /* An <input> cannot carry the ::before/::after the halftone needs, so the
+       casting box is a wrapper and the input inside it is bare. Focus lands on
+       the wrapper, where the outline can sit outside the border. */
+    .db-field { display: flex; min-width: 0; background: var(--surface-page); }
+    .db-field:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
     .db-input {
-      width: 100%; border: var(--border); background: var(--surface-page); color: var(--text-1);
-      box-shadow: var(--shadow-1); font: var(--type-body); padding: 8px 10px;
+      width: 100%; min-width: 0; border: 0; margin: 0; background: transparent; color: var(--text-1);
+      font: var(--type-compact); padding: 8px 10px;
     }
-    .db-input::placeholder { color: var(--text-3); }
+    .db-field .db-input:focus { outline: none; }
+    .db-input-flat { border: var(--border); background: var(--surface-page); }
+    .db-input::placeholder { color: var(--text-3); opacity: 1; }
 
-    /* 0–50% download, 50–100% conversion. 80ms so it steps rather than glides. */
+    /* 0–50% download, 50–100% conversion. */
     .db-progress { border: var(--border); height: 18px; background: var(--surface-page); }
     .db-progress-fill { height: 100%; background: var(--project-ink); transition: width var(--motion-fast) var(--easing); }
 
-    .db-status { font: var(--type-code); color: var(--text-2); }
+    .db-status { font: var(--type-code); font-size: var(--text-body-sm); color: var(--text-2); }
     .db-status-error { color: var(--status-error); font-weight: var(--weight-bold); }
 
     /* The spine carries a mark instead of a word here: the note is an aside, and
        a vertical "DID YOU KNOW?" shouted as loudly as a panel title read like
-       one. The block is still the same ink block; only its content changed.
-       Body is one step down from --type-body — face follows role, size follows
-       hierarchy, and this text ranks below the tool itself. */
-    .db-callout { border: var(--border); box-shadow: var(--shadow-2); display: grid; grid-template-columns: max-content 1fr; }
+       one. Body is one step down from the running copy. */
+    .db-callout { display: grid; grid-template-columns: max-content 1fr; }
     .db-callout-spine {
-      display: grid; place-items: center; width: 34px;
+      display: grid; place-items: center; width: 36px;
       background: var(--project-ink); color: var(--project-ink-contrast);
+      border-right: var(--border);
     }
     .db-callout-body { padding: var(--space-5) var(--space-6); font: var(--type-dek); color: var(--text-2); }
 
-    /* Imagery is screened like newsprint. Posts with no thumbnail get an empty
-       dot field, inked with one of the sixteen, picked from the post id.
-       The post's choice arrives as --halftone-ink (inline, from Vue) and only
-       feeds --halftone-dot on paper: in the dark theme every dot collapses to
-       amber, because that theme is monochrome and sixteen hues would wreck it.
-       The indirection is what lets a plain rule beat an inline style. */
-    .db-halftone {
-      --halftone-dot: var(--halftone-ink, var(--ink-graphite));
-      /* Paints its own paper: the tile behind it is filled with the project ink
-         for the duotone, and ink dots on ink would be invisible. */
-      background-color: var(--surface-page);
-      background-image: radial-gradient(var(--halftone-dot) var(--halftone-dot-size), transparent 0);
-      background-size: 7px 7px;
-    }
-    :root[data-theme="dark"] .db-halftone { --halftone-dot: var(--ink-amber); }
+    /* History card: a recognisable strip, not a poster. The thumbnail has a
+       fixed height, so a row of cards stays short however wide it gets. */
+    .db-strip { height: clamp(88px, 24vw, 132px); }
+
+    /* Posts with no thumbnail get an empty halftone field (the system's
+       .screen), inked with one of the sixteen, picked from the post id. The
+       inks stay coloured in every theme, so the field does too. */
     /* A real thumbnail is screened the way the system screens photographs:
-       grayscale, contrast pushed, multiplied onto the ink. Highlights come back
-       as the ink, shadows go to black — a two-colour duotone, amber in the dark
-       theme for free. `isolation` keeps the blend inside the tile instead of
-       letting it reach the page. Hover restores the full-colour frame, because
-       a history row still has to be recognisable. The whole card is the target,
-       not just the image: focus-within also covers reaching the row by keyboard. */
+       grayscale, contrast pushed, blended onto the ink. Highlights come back as
+       the paper, shadows as the ink — the operator follows the paper: `screen`
+       on light paper, `multiply` on the dark and terminal papers. `isolation`
+       keeps the blend inside the tile. Hover restores the full-colour frame,
+       because a history row still has to be recognisable. */
     .db-thumb-btn { background: var(--project-ink); isolation: isolate; }
-    /* Ink on paper, not paper on ink: highlights have to come back as the paper
-       and shadows as the ink, or a mostly-white frame turns into a dark slab and
-       stops matching the empty placeholder beside it. That means the operator
-       follows the paper, same as the dot screen below.
-       Sized here, not with utilities: the design system's unlayered
-       `img { height: auto }` beats Tailwind's layered h-full. */
     .db-thumb {
       width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: center;
       filter: grayscale(1) contrast(1.35); mix-blend-mode: screen;
     }
-    :root[data-theme="dark"] .db-thumb { mix-blend-mode: multiply; }
-    /* Then the paper punches back through on the same 7px pitch as the empty
-       placeholder, so a screened frame and a missing one read as one family.
-       The operator has to follow the paper: white paper lightens through
-       `screen`, black paper darkens through `multiply`. Using either alone
-       would make the dots vanish in the other theme. */
+    :root[data-theme="dark"] .db-thumb, :root[data-theme="terminal"] .db-thumb { mix-blend-mode: multiply; }
+    /* Then the paper punches back through on the same pitch as the empty
+       placeholder, so a screened frame and a missing one read as one family. */
     .db-thumb-btn:has(.db-thumb)::after {
       content: ""; position: absolute; inset: 0; pointer-events: none;
-      background-image: radial-gradient(var(--surface-page) var(--halftone-dot-size), transparent 0);
-      background-size: 7px 7px;
+      background-image: radial-gradient(circle at calc(var(--screen-pitch) / 2) calc(var(--screen-pitch) / 2), var(--surface-page) var(--screen-radius), transparent calc(var(--screen-radius) + 0.5px));
+      background-size: var(--screen-pitch) var(--screen-pitch);
       mix-blend-mode: screen;
     }
-    :root[data-theme="dark"] .db-thumb-btn:has(.db-thumb)::after { mix-blend-mode: multiply; }
+    :root[data-theme="dark"] .db-thumb-btn:has(.db-thumb)::after,
+    :root[data-theme="terminal"] .db-thumb-btn:has(.db-thumb)::after { mix-blend-mode: multiply; }
     /* The card sits inside a panel that already casts, and two nested blocks
-       must never both cast — so it rests flat and earns its shadow only while
-       you are on it. .neo-lift supplies the travel; neo-sm keeps the hover step
-       at 5px rather than jumping to 8px, which on a tile this size reads as a
-       pop rather than a lift. The thumbnail button inside casts nothing, ever. */
-    .db-card { box-shadow: none; }
+       must never both cast — so it rests flat (.cast-flat) and earns its dot
+       shadow only while you are on it; .lift supplies the travel. */
+    .db-card:hover::after, .db-card:focus-within::after {
+      background: var(--dot-field) 0 0 / var(--dot-pitch) var(--dot-pitch);
+    }
     .db-card:hover .db-thumb, .db-card:focus-within .db-thumb {
       filter: none; mix-blend-mode: normal;
     }
@@ -201,23 +177,22 @@
 
     .db-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
 
-    /* Third-party marks keep their own colour; the system only squares them off. */
+    /* Support links: each takes a system ink with its on-* partner, so they
+       stay legible in all three themes. */
     .db-chip {
-      display: inline-block; border: var(--border); padding: 5px 9px;
+      display: inline-flex; align-items: center; padding: 5px 9px;
       font: var(--type-label); text-transform: uppercase; letter-spacing: var(--tracking-meta); text-decoration: none;
-      box-shadow: var(--shadow-1);
     }
-    .db-chip-pix, a.db-chip-pix:visited { background: #77B6A8; color: #000; }
-    /* APOIA.se sets its mark in white, but white on their orange is 3.7:1 —
-       below AA at this size. Black on the same orange is 5.6:1. */
-    .db-chip-apoiase, a.db-chip-apoiase:visited { background: #EC4B3C; color: #000; }
-    .db-chip-coffee, a.db-chip-coffee:visited { background: #FFDD00; color: #000; }
-    .db-chip-sponsors, a.db-chip-sponsors:visited { background: #EA4AAA; color: #000; }
+    a.db-chip-pix, a.db-chip-pix:visited, a.db-chip-pix:hover { background: var(--ink-pix); color: var(--on-pix); }
+    a.db-chip-apoiase, a.db-chip-apoiase:visited, a.db-chip-apoiase:hover { background: var(--ink-orange); color: var(--on-orange); }
+    a.db-chip-coffee, a.db-chip-coffee:visited, a.db-chip-coffee:hover { background: var(--ink-yellow); color: var(--on-yellow); }
+    a.db-chip-sponsors, a.db-chip-sponsors:visited, a.db-chip-sponsors:hover { background: var(--ink-pink); color: var(--on-pink); }
   </style>
   <script>
-    // Dark mode is opt-in and manual — never prefers-color-scheme. Applied here,
-    // before first paint, so the amber theme does not flash white on load.
-    if (localStorage.getItem("theme") === "dark") document.documentElement.dataset.theme = "dark";
+    // The theme is manual: light unless this device picked dark or terminal,
+    // never prefers-color-scheme. Applied before first paint so a dark pick does
+    // not flash paper. Storage can throw (private mode); light is the fallback.
+    try { var saved = localStorage.getItem("theme"); if (saved === "dark" || saved === "terminal") document.documentElement.setAttribute("data-theme", saved); } catch (error) {}
   </script>
   <script src="lib/ffmpeg-0.12.7.min.js"></script>
   <script src="lib/mux-7.0.3.min.js"></script>
@@ -230,26 +205,17 @@
   <div id="app">
     <div class="mx-auto max-w-[880px] px-6 pb-16">
       <div class="flex flex-wrap items-center justify-end gap-2 pt-4">
-        <button @click="toggleLang" :lang="lang === 'pt' ? 'en' : 'pt-BR'" class="db-btn db-btn-sm neo-press neo-sm">{{ lang === 'pt' ? 'english' : 'português' }}</button>
-        <button @click="toggleTheme" class="db-btn db-btn-sm neo-press neo-sm">
-          <svg v-if="theme === 'dark'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" />
-            <path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
-          </svg>
-          <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
-          </svg>
-          <span>{{ theme === 'dark' ? t.themeLight : t.themeDark }}</span>
-        </button>
+        <button @click="toggleLang" :lang="lang === 'pt' ? 'en' : 'pt-BR'" class="db-btn db-btn-sm cast press">{{ lang === 'pt' ? 'english' : 'português' }}</button>
+        <div class="db-theme" role="group" :aria-label="t.themeGroup">
+          <button v-for="name in themes" :key="name" type="button" @click="setTheme(name)" :aria-pressed="theme === name ? 'true' : 'false'"
+            class="db-btn db-btn-sm cast press">{{ t.themeNames[name] }}</button>
+        </div>
       </div>
 
       <main>
-      <h1 class="db-wordmark">down<span class="db-wordmark-suffix">.blue</span></h1>
+      <h1 class="db-wordmark">down<span class="ink-block tilt-cw">.blue</span></h1>
 
-      <section class="db-panel mt-15 mb-6">
+      <section class="db-panel cast mt-15 mb-6">
         <h2 class="db-panel-head">
           <span>{{ t.panelTitle }}</span>
         </h2>
@@ -257,19 +223,21 @@
           <p class="mb-5" @click="toggleNetwork"><strong>{{ heroStrong }}</strong> {{ heroRest }}</p>
 
           <form @submit.prevent="findVideo" class="flex flex-wrap gap-2">
-            <input ref="postUrlInput" v-model="postUrl" type="text" inputmode="url" autocomplete="off" class="db-input min-w-0 flex-1"
-              :aria-label="t.urlLabel" :placeholder="t.placeholder" required />
+            <span class="db-field cast min-w-0 flex-1">
+              <input ref="postUrlInput" v-model="postUrl" type="text" inputmode="url" autocomplete="off" class="db-input"
+                :aria-label="t.urlLabel" :placeholder="t.placeholder" required />
+            </span>
             <button v-if="postUrl" type="button" @click="clearPostUrl" :disabled="loadingMode !== null"
-              class="db-btn shrink-0 px-3 neo-press" :aria-label="t.clearBtn" :title="t.clearBtn">
+              class="db-btn shrink-0 px-3 cast press" :aria-label="t.clearBtn" :title="t.clearBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
                 <path d="M18 6 6 18" /><path d="m6 6 12 12" />
               </svg>
             </button>
-            <button type="submit" :disabled="loadingMode !== null" class="db-btn db-btn-primary shrink-0 px-3 neo-press"
+            <button type="submit" :disabled="loadingMode !== null" class="db-btn db-btn-primary shrink-0 px-3 cast press"
               :aria-label="t.findBtn" :title="t.findBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
                 <path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" />
               </svg>
             </button>
@@ -283,15 +251,15 @@
             <legend class="db-choice-title">{{ t.pickMode }}</legend>
             <p class="db-note mb-4">{{ t.pickModeHint }}</p>
             <div class="grid gap-2 sm:grid-cols-3">
-              <button @click="downloadOriginalRaw" :disabled="loadingMode !== null" class="db-btn db-btn-mode neo-press">
+              <button @click="downloadOriginalRaw" :disabled="loadingMode !== null" class="db-btn db-btn-mode cast press">
                 <span class="db-mode-label">{{ t.btnRaw }}</span>
                 <span class="db-micro">{{ t.btnRawSub }}</span>
               </button>
-              <button @click="downloadOriginalAsMp4" :disabled="loadingMode !== null" class="db-btn db-btn-mode neo-press">
+              <button @click="downloadOriginalAsMp4" :disabled="loadingMode !== null" class="db-btn db-btn-mode cast press">
                 <span class="db-mode-label">{{ t.btnFullMp4 }}</span>
                 <span class="db-micro">{{ t.btnFullMp4Sub }}</span>
               </button>
-              <button @click="download720pMp4" :disabled="loadingMode !== null" class="db-btn db-btn-mode neo-press">
+              <button @click="download720pMp4" :disabled="loadingMode !== null" class="db-btn db-btn-mode cast press">
                 <span class="db-mode-label">{{ t.btn720 }}</span>
                 <span class="db-micro">{{ t.btn720Sub }}</span>
               </button>
@@ -301,14 +269,14 @@
           <!-- GIF: download options -->
           <div v-if="videoSource && videoSource.kind === 'gif'" class="mt-4">
             <div v-if="videoSource.mp4Url" class="grid gap-2 sm:grid-cols-2">
-              <button @click="downloadGif(true)" :disabled="loadingMode !== null" class="db-btn db-btn-primary neo-press">
+              <button @click="downloadGif(true)" :disabled="loadingMode !== null" class="db-btn db-btn-primary cast press">
                 {{ t.btnGifMp4 }}
               </button>
-              <button @click="downloadGif()" :disabled="loadingMode !== null" class="db-btn neo-press">
+              <button @click="downloadGif()" :disabled="loadingMode !== null" class="db-btn cast press">
                 {{ t.btnGif }}
               </button>
             </div>
-            <button v-else @click="downloadGif()" :disabled="loadingMode !== null" class="db-btn db-btn-primary w-full neo-press">
+            <button v-else @click="downloadGif()" :disabled="loadingMode !== null" class="db-btn db-btn-primary w-full cast press">
               {{ t.btnGif }}
             </button>
           </div>
@@ -330,10 +298,10 @@
           </div>
 
           <a v-if="downloadReady && downloadLink && downloadName" :href="downloadLink" :download="downloadName"
-            class="db-btn mt-4 w-full neo-press">{{ t.saveFile }} ({{ downloadName }})</a>
+            class="db-btn mt-4 w-full cast press">{{ t.saveFile }} ({{ downloadName }})</a>
 
           <!-- Subtitle download (after HLS path) -->
-          <a v-if="subtitleUrl" :href="subtitleUrl" class="db-btn mt-2 w-full neo-press"
+          <a v-if="subtitleUrl" :href="subtitleUrl" class="db-btn mt-2 w-full cast press"
             :download="`${subtitleLang}.vtt`">{{ t.subtitlesPrefix }} ({{ subtitleLang }}.vtt)</a>
 
           <!-- Video Preview -->
@@ -353,27 +321,26 @@
       </section>
 
       <!-- History -->
-      <section class="db-panel mb-6" v-if="urlHistory.length > 0">
+      <section class="db-panel cast mb-6" v-if="urlHistory.length > 0">
         <h2 class="db-panel-head">
           <span>{{ t.historyTitle }}</span>
           <span>{{ filteredHistory.length }}/{{ urlHistory.length }}</span>
         </h2>
         <div class="border-b border-hairline p-3">
-          <input v-model="historyQuery" type="search" :aria-label="t.searchHistory" :placeholder="t.searchHistory" class="db-input" />
+          <input v-model="historyQuery" type="search" :aria-label="t.searchHistory" :placeholder="t.searchHistory" class="db-input db-input-flat" />
         </div>
         <p v-if="filteredHistory.length === 0" class="db-meta p-9 text-center">{{ t.noResults }}</p>
         <div class="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 lg:grid-cols-3">
           <article v-for="(item, index) in paginatedHistory" :key="getHistoryItemUrl(item) || index"
-            class="db-card flex min-w-0 flex-col border border-strong neo-lift neo-sm">
+            class="db-card cast cast-flat lift flex min-w-0 flex-col">
             <button @click="fillAndFind(item)" :title="t.reopen" :disabled="loadingMode !== null"
-              tabindex="-1" aria-hidden="true" class="db-thumb-btn relative block w-full overflow-hidden border-b border-strong"
-              style="aspect-ratio: 16 / 9;">
+              tabindex="-1" aria-hidden="true" class="db-thumb-btn db-strip relative block w-full overflow-hidden border-b border-strong">
               <img v-if="getThumbnailUrl(item)" :src="getThumbnailUrl(item)"
                 alt="" loading="lazy"
                 crossorigin="anonymous" referrerpolicy="no-referrer"
                 class="db-thumb absolute inset-0"
                 @error="handleThumbnailError(getHistoryItemData(item).postId)" />
-              <span v-else class="db-halftone absolute inset-0 block"
+              <span v-else class="screen absolute inset-0 block"
                 :style="thumbnailPlaceholderStyle(getHistoryItemData(item).postId)"></span>
             </button>
             <div class="flex min-w-0 flex-1 flex-col gap-2 p-2">
@@ -384,16 +351,16 @@
               <div class="mt-auto flex items-center justify-between gap-2 border-t border-hairline pt-2">
                 <a :href="normalizedHistoryUrl(item)" class="db-micro truncate" target="_blank" rel="noopener">{{ t.viewPost }}</a>
                 <div class="flex shrink-0 gap-1">
-                  <button @click="fillAndFind(item)" :title="t.reopen" :aria-label="t.reopen" :disabled="loadingMode !== null" class="db-btn db-btn-sm neo-press neo-sm">
+                  <button @click="fillAndFind(item)" :title="t.reopen" :aria-label="t.reopen" :disabled="loadingMode !== null" class="db-btn db-btn-sm cast press">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
                       <path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" />
                     </svg>
                   </button>
                   <button @click="removeFromHistory(getHistoryItemUrl(item))" :title="t.removeHistory"
-                    :aria-label="t.removeHistory" class="db-btn db-btn-sm db-btn-danger neo-press neo-sm">
+                    :aria-label="t.removeHistory" class="db-btn db-btn-sm db-btn-danger cast press">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
                       <path d="M18 6 6 18" /><path d="m6 6 12 12" />
                     </svg>
                   </button>
@@ -403,15 +370,15 @@
           </article>
         </div>
         <div v-if="hasMoreHistory" class="border-t border-hairline p-3 text-center">
-          <button @click="loadMoreHistory" class="db-btn neo-press">{{ t.showMore }}</button>
+          <button @click="loadMoreHistory" class="db-btn cast press">{{ t.showMore }}</button>
         </div>
       </section>
 
-      <aside class="db-callout mb-9">
+      <aside class="db-callout cast mb-9">
         <!-- lucide-static 0.542.0, info.svg. The label survives as aria-label. -->
         <span class="db-callout-spine" role="img" :aria-label="t.didYouKnow" :title="t.didYouKnow">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
             <circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" />
           </svg>
         </span>
@@ -434,12 +401,12 @@
         <p class="db-note mb-6 text-center">{{ t.fromBrazil }}</p>
         <div class="mb-6 flex flex-wrap items-center justify-center gap-2">
           <span class="db-micro mr-1 text-text-3">{{ t.support }}</span>
-          <a href="https://pix.joseli.to" target="_blank" rel="noopener" class="db-chip db-chip-pix neo-press neo-sm">Pix</a>
-          <a href="https://github.com/sponsors/breakzplatform" target="_blank" rel="noopener" class="db-chip db-chip-sponsors neo-press neo-sm">GitHub Sponsors</a>
+          <a href="https://pix.joseli.to" target="_blank" rel="noopener" class="db-chip db-chip-pix cast press">Pix</a>
+          <a href="https://github.com/sponsors/breakzplatform" target="_blank" rel="noopener" class="db-chip db-chip-sponsors cast press">GitHub Sponsors</a>
           <!-- Temporarily hidden support link
-          <a href="https://apoia.se/joselito" target="_blank" rel="noopener" class="db-chip db-chip-apoiase neo-press neo-sm">APOIA.se</a>
+          <a href="https://apoia.se/joselito" target="_blank" rel="noopener" class="db-chip db-chip-apoiase cast press">APOIA.se</a>
           -->
-          <a href="https://buymeacoffee.com/joselito" target="_blank" rel="noopener" class="db-chip db-chip-coffee neo-press neo-sm">Buy me a Coffee</a>
+          <a href="https://buymeacoffee.com/joselito" target="_blank" rel="noopener" class="db-chip db-chip-coffee cast press">Buy me a Coffee</a>
         </div>
         <p class="db-note text-center">{{ t.respect }}</p>
       </footer>
@@ -479,8 +446,8 @@
         partOf: "part of",
         byAuthor: "by",
         viewSource: "View-source",
-        themeDark: "dark",
-        themeLight: "light",
+        themeGroup: "theme",
+        themeNames: { light: "light", dark: "dark", terminal: "terminal" },
         panelTitle: "Download a video",
         heroStrong: "Download Bluesky videos and GIFs directly in your browser!",
         heroRest: "Enter a Bluesky post URL:",
@@ -553,8 +520,8 @@
         partOf: "parte do",
         byAuthor: "por",
         viewSource: "Ver código",
-        themeDark: "escuro",
-        themeLight: "claro",
+        themeGroup: "tema",
+        themeNames: { light: "claro", dark: "escuro", terminal: "terminal" },
         panelTitle: "Baixar um vídeo",
         heroStrong: "Baixe vídeos e GIFs do Bluesky direto no seu navegador!",
         heroRest: "Cole a URL de um post do Bluesky:",
@@ -622,9 +589,12 @@
       },
     };
 
-    // Dark mode is deliberately opt-in: the OS preference is never consulted.
+    // The theme is manual: the OS preference is never consulted. The inline
+    // script in <head> has already applied this device's pick to <html>.
+    const THEMES = ["light", "dark", "terminal"];
     function detectTheme() {
-      return localStorage.getItem("theme") === "dark" ? "dark" : "light";
+      const current = document.documentElement.getAttribute("data-theme");
+      return THEMES.includes(current) ? current : "light";
     }
 
     // Easter egg: clicking the intro line swaps "Bluesky" for "Atmosphere".
@@ -646,6 +616,7 @@
           ffmpeg: null,
           lang: detectLang(),
           theme: detectTheme(),
+          themes: THEMES,
           network: detectNetwork(),
           postUrl: "",
           postCid: "",
@@ -707,7 +678,6 @@
       },
       mounted() {
         document.documentElement.lang = this.lang === "pt" ? "pt-BR" : "en";
-        document.documentElement.dataset.theme = this.theme;
         this.loadHistory();
         this.backfillHistoryThumbnails();
 
@@ -744,10 +714,12 @@
           this.network = this.network === "Bluesky" ? "Atmosphere" : "Bluesky";
           try { localStorage.setItem("network", this.network); } catch {}
         },
-        toggleTheme() {
-          this.theme = this.theme === "dark" ? "light" : "dark";
-          localStorage.setItem("theme", this.theme);
-          document.documentElement.dataset.theme = this.theme;
+        setTheme(name) {
+          if (!THEMES.includes(name)) return;
+          this.theme = name;
+          if (name === "light") document.documentElement.removeAttribute("data-theme");
+          else document.documentElement.setAttribute("data-theme", name);
+          try { localStorage.setItem("theme", name); } catch {}
         },
 
         // ---- History ----
@@ -835,17 +807,16 @@
         },
         // A post with no thumbnail gets an empty halftone field. The dot takes
         // one of the sixteen inks, picked from the post id so the same post
-        // always screens the same colour. The dark theme ignores this and
-        // screens everything in amber — see .db-halftone.
+        // always screens the same colour, in every theme.
         thumbnailPlaceholderStyle(postId) {
           if (!postId || typeof postId !== "string" || postId === "Unknown") {
-            return "--halftone-ink: var(--ink-graphite);";
+            return "--dot-ink: var(--ink-graphite);";
           }
           let hash = 0;
           for (let i = 0; i < postId.length; i++) {
             hash = (((hash << 5) - hash) + postId.charCodeAt(i)) | 0;
           }
-          return `--halftone-ink: var(--ink-${INK_NAMES[Math.abs(hash) % INK_NAMES.length]});`;
+          return `--dot-ink: var(--ink-${INK_NAMES[Math.abs(hash) % INK_NAMES.length]});`;
         },
         getThumbnailUrl(item) {
           const data = this.getHistoryItemData(item);

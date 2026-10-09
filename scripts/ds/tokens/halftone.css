@@ -1,0 +1,32 @@
+/* ---------------------------------------------------------------------------
+   Halftone ("retícula") geometry and tilt. Non-colour tokens.
+
+   The hard shadow is a dot field, not a solid block: dots at an integer pitch
+   with a pixel radius, never a percentage of the cell, so every dot lands on
+   the same sub-pixel phase and the field does not beat against the screen
+   (moire). On phones the pitch opens to 6px and the offset drops to 5px, about
+   half the ink coverage, so blocks weigh less on a small screen.
+   --------------------------------------------------------------------------- */
+:root{
+--dot-pitch:4px;
+--dot-radius:1.5px;
+--shadow-offset:6px;
+--shadow-offset-hover:9px;
+--shadow-offset-pressed:0px;
+--press-travel:2px;
+
+/* Image screens (portraits, thumbnails, empty placeholders). */
+--screen-pitch:6px;
+--screen-radius:2px;
+
+/* Tilt: ONLY the ink block behind a title or the wordmark tilts, between -2deg
+   and +1.5deg, like a sticker. Text, panels, controls never rotate. */
+--tilt-min:-2deg;
+--tilt-max:1.5deg;
+--tilt:-1.5deg;      /* default: wordmark, display highlight */
+--tilt-cw:1.5deg;    /* the clockwise variant, for a second block nearby */
+--tilt-strong:-2deg; /* the steepest allowed */
+}
+@media (max-width:600px){
+:root{--dot-pitch:6px;--shadow-offset:5px}
+}

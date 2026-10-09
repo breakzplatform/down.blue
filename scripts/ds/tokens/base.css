@@ -1,17 +1,23 @@
 /* Minimal element defaults. Consumers get these for free by linking styles.css. */
-html{-webkit-text-size-adjust:100%}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;background:var(--surface-page)}
 body{margin:0;background:var(--surface-page);color:var(--text-1);font:var(--type-body);text-wrap:pretty}
+/* A themed island (data-theme on any element) paints its own paper and ink. */
+[data-theme]{background-color:var(--surface-page);color:var(--text-1)}
 ::selection{background:var(--selection-bg);color:var(--selection-fg)}
 a{color:var(--link);text-decoration:underline;text-underline-offset:var(--underline-offset);text-decoration-thickness:var(--underline-thickness)}
 a:visited{color:var(--link-visited)}
 a:active{color:var(--link-active)}
-a:not([class*="neo"]):hover{background:var(--link);color:var(--text-inverse);text-decoration:none}
-a:not([class*="neo"]):visited:hover{background:var(--link-visited);color:var(--text-inverse)}
-:root[data-theme="dark"] a:not([class*="neo"]):hover,:root[data-theme="dark"] a:not([class*="neo"]):visited:hover{color:#000}
+/* Hover inverts a plain link into a block of its own colour. :where() keeps
+   this at zero specificity, so any component class (.btn, .card, .chip ...)
+   wins without opting out; .cast and .wordmark are excluded outright. */
+:where(a:not(.cast,.neo,.wordmark,[data-no-invert])):hover{background:var(--link);color:var(--text-inverse);text-decoration:none}
+:where(a:not(.cast,.neo,.wordmark,[data-no-invert])):visited:hover{background:var(--link-visited);color:var(--text-inverse)}
 :focus-visible{outline:2px solid var(--focus-ring);outline-offset:1px}
 hr{border:0;border-top:var(--border);margin:var(--space-8) 0}
 code,kbd,samp,pre{font:var(--type-code)}
-h1,h2,h3,h4{font-family:var(--font-display);font-weight:var(--weight-normal);letter-spacing:var(--tracking-display);margin:0 0 var(--space-4)}
+button,input,select,textarea{font:inherit;color:inherit;border-radius:0}
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:var(--weight-display);letter-spacing:var(--tracking-display);margin:0 0 var(--space-4)}
 h1{font-size:var(--text-display-2);line-height:var(--leading-display)}
 h2{font-size:var(--text-display-3);line-height:1.1}
 h3{font-size:var(--text-display-4);line-height:1.15}
