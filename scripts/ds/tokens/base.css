@@ -2,12 +2,6 @@
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;background:var(--surface-page)}
 body{margin:0;background:var(--surface-page);color:var(--text-1);font:var(--type-body);text-wrap:pretty}
-/* Section headings, panel bars and icon blocks paint with --heading-ink: the
-   project ink in light and terminal, plain white in dark, where a mid-tone ink
-   bar reads as murky against the near-black paper. The title block and the
-   buttons keep --project-ink in every theme. */
-:root,[data-theme]{--heading-ink:var(--project-ink);--on-heading-ink:var(--project-ink-contrast)}
-[data-theme="dark"]{--heading-ink:#FFFFFF;--on-heading-ink:#000000}
 /* A themed island (data-theme on any element) paints its own paper and ink. */
 [data-theme]{background-color:var(--surface-page);color:var(--text-1)}
 ::selection{background:var(--selection-bg);color:var(--selection-fg)}

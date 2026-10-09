@@ -29,7 +29,7 @@
 @source "../index.html";
 
 /* down.blue runs on its own teal, --ink-down, which the design system defines
-   for all three themes (#018281 light, #149C98 dark, amber in terminal) with
+   for all three themes (#018281 light, #0E7471 dark, under white text, amber in terminal) with
    its --on-down partner. One rule picks it for every theme: it sits on
    `:root, [data-theme]` after the imports, so it beats each theme block's
    default project ink and resolves to that theme's value. */

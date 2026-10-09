@@ -3,8 +3,8 @@
    Dark theme ("fotolito"): warm near-black paper, warm off-white ink. Opt-in
    only, via data-theme="dark" on <html> (or on any element, to scope it). The
    sixteen inks stay coloured, lifted for dark paper; every --on-* is black.
-   Section headings and icon blocks turn plain white here (--heading-ink in
-   base.css): the project ink keeps the title block and the buttons. */
+   The product inks drop to a deeper shade here so white text sits on them
+   (--ink-pix #1A7A70, --ink-down #0E7471, both >=5:1 with #FFFFFF). */
 
 [data-theme="dark"] {
   color-scheme: dark;
@@ -52,10 +52,10 @@
   --on-error: #000000;
 
   /* product inks */
-  --ink-down: #149C98;
-  --on-down: #000000;
-  --ink-pix: #32BCAD;
-  --on-pix: #000000;
+  --ink-down: #0E7471;
+  --on-down: #FFFFFF;
+  --ink-pix: #1A7A70;
+  --on-pix: #FFFFFF;
 
   /* the sixteen inks */
   --ink-blue: #6E9BFF;

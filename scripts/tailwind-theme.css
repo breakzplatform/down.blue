@@ -84,8 +84,6 @@
   /* project ink, spot, status — each with its on-* partner */
   --color-project-ink: var(--project-ink);
   --color-project-ink-contrast: var(--project-ink-contrast);
-  --color-heading-ink: var(--heading-ink);
-  --color-on-heading-ink: var(--on-heading-ink);
   --color-spot: var(--spot);                  --color-on-spot: var(--on-spot);
   --color-status-ok: var(--status-ok);        --color-on-ok: var(--on-ok);
   --color-status-warn: var(--status-warn);    --color-on-warn: var(--on-warn);
