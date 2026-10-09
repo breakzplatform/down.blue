@@ -54,7 +54,7 @@
     .db-panel-head {
       display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
       margin: 0; padding: var(--box-head-pad); border-bottom: var(--border);
-      background: var(--project-ink); color: var(--project-ink-contrast);
+      background: var(--heading-ink); color: var(--on-heading-ink);
       font: var(--weight-bold) var(--text-caption)/1.3 var(--font-mono);
       letter-spacing: var(--tracking-meta); text-transform: uppercase;
     }
@@ -71,6 +71,9 @@
     .db-btn-primary, a.db-btn-primary, a.db-btn-primary:visited, a.db-btn-primary:hover {
       background: var(--project-ink); border-color: var(--project-ink); color: var(--project-ink-contrast);
     }
+    /* Icon-only buttons follow the heading ink: white in dark, like the panel
+       bars and the callout spine. */
+    .db-btn-primary.db-btn-icon { background: var(--heading-ink); border-color: var(--heading-ink); color: var(--on-heading-ink); }
     .db-btn-danger { background: var(--ink-red); border-color: var(--ink-red); color: var(--on-red); }
     /* Disabled: no travel, no shadow (.press handles both), a sunken fill and
        the second text colour. Never an opacity fade. */
@@ -127,7 +130,7 @@
     .db-callout { display: grid; grid-template-columns: max-content 1fr; }
     .db-callout-spine {
       display: grid; place-items: center; width: 36px;
-      background: var(--project-ink); color: var(--project-ink-contrast);
+      background: var(--heading-ink); color: var(--on-heading-ink);
       border-right: var(--border);
     }
     .db-callout-body { padding: var(--space-5) var(--space-6); font: var(--type-dek); color: var(--text-2); }
@@ -244,7 +247,7 @@
                 <path d="M18 6 6 18" /><path d="m6 6 12 12" />
               </svg>
             </button>
-            <button type="submit" :disabled="loadingMode !== null" class="db-btn db-btn-primary shrink-0 px-3 cast press"
+            <button type="submit" :disabled="loadingMode !== null" class="db-btn db-btn-primary db-btn-icon shrink-0 px-3 cast press"
               :aria-label="t.findBtn" :title="t.findBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
