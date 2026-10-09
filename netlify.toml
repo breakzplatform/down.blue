@@ -4,3 +4,9 @@
 [build]
   publish = "."
   command = "rm -rf scripts netlify.toml .gitignore"
+
+# Short link for the iOS Shortcut announcement post.
+[[redirects]]
+  from = "/ios"
+  to = "https://bsky.app/profile/down.blue/post/3l534dn26xp2j"
+  status = 302
