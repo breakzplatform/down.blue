@@ -257,29 +257,23 @@ a.wordmark:active {
   border-top: 3px solid var(--border-strong);
   border-bottom: 1px solid var(--border-strong);
 }
+/* The theme control is one button that cycles light -> dark -> terminal.
+   Like the language toggle it names the destination: label and icon show the
+   NEXT theme (data-next-theme, set by theme.js / ThemeSwitch). Before the
+   script runs the attribute is missing and the light page's next step, dark,
+   is shown. */
 .theme-switch {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  justify-self: start;
+  align-self: start;
 }
-.theme-switch[role="group"] {
-  gap: 16px;
-}
-.theme-switch .btn[aria-pressed="true"] {
-  background: var(--text-1);
-  color: var(--text-inverse);
-  border-color: var(--text-1);
-}
-.theme-switch-icon .icon-sun {
+.theme-switch .icon {
   display: none;
 }
-:root[data-theme="dark"] .theme-switch-icon .icon-moon,
-:root[data-theme="terminal"] .theme-switch-icon .icon-moon {
-  display: none;
-}
-:root[data-theme="dark"] .theme-switch-icon .icon-sun,
-:root[data-theme="terminal"] .theme-switch-icon .icon-sun {
-  display: block;
+.theme-switch:not([data-next-theme]) .icon-moon,
+.theme-switch[data-next-theme="dark"] .icon-moon,
+.theme-switch[data-next-theme="light"] .icon-sun,
+.theme-switch[data-next-theme="terminal"] .icon-terminal {
+  display: inline-block;
 }
 .field-block {
   display: block;
@@ -951,10 +945,43 @@ a.wordmark:active {
   .def-list {
     grid-template-columns: minmax(0, 1fr);
   }
-  .theme-switch[role="group"] {
-    gap: 8px;
-  }
   .btn.lg {
     width: 100%;
   }
+}
+
+/* A field and its button (copiar, baixar, buscar) read as one unit: the row
+   stretches, so the button is exactly as tall as the field box — one line or
+   several — with the same 2px border and the same shadow offset. */
+.input-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+.input-row > .field,
+.input-row > .value {
+  flex: 1;
+  min-width: 0;
+}
+.input-row > .btn {
+  flex: none;
+  align-self: stretch;
+  height: auto;
+  min-height: 0;
+}
+.field-block > .input-row {
+  margin: 0;
+}
+/* A read-only value to copy (pix key, copia-e-cola code): sunken, typewriter,
+   wraps anywhere. Pair it with a button in an .input-row. */
+.value {
+  margin: 0;
+  padding: 8px 10px;
+  background: var(--surface-sunken);
+  color: var(--text-1);
+  font: var(--weight-normal) 15px/1.4 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.value.cast {
+  background-color: var(--surface-sunken);
 }
