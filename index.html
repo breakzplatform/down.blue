@@ -22,6 +22,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="https://down.blue/og.png" />
   <link rel="stylesheet" href="assets/tailwind-4.3.3.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <style>
     /* down.blue components, built on the joseli.to design system (v2, "retícula")
        that scripts/tailwind-input.css compiles into the stylesheet above. Nothing
@@ -708,8 +709,12 @@
           this.progress = 50 + Math.round(pct * 50);
         });
 
+        // Android's share sheet (manifest share_target) may put the link in
+        // url, text or title, often surrounded by other words.
         const urlParams = new URLSearchParams(window.location.search);
-        const url = urlParams.get("url");
+        const url = ["url", "text", "title"]
+          .map((name) => urlParams.get(name)?.match(/https?:\/\/\S+/)?.[0])
+          .find(Boolean);
         if (url) {
           this.postUrl = url;
           this.findVideo();

@@ -2,6 +2,7 @@
 # Renders the icon sources with headless Chrome:
 #   scripts/avatar.svg  -> scripts/avatar.png (1000px, Bluesky profile picture)
 #                       -> apple-touch-icon.png (180px, opaque, iOS rounds it)
+#                       -> pwa-icon-192.png, pwa-icon-512.png (manifest icons)
 # The favicon is scripts/favicon.svg inlined into index.html; paste it by hand.
 set -euo pipefail
 
@@ -41,3 +42,11 @@ echo "Wrote scripts/avatar.png"
 sips -z 180 180 scripts/avatar.png --out apple-touch-icon.png >/dev/null
 [[ "$(png_size apple-touch-icon.png)" == "180x180" ]] || { echo "Bad resize: apple-touch-icon.png" >&2; exit 1; }
 echo "Wrote apple-touch-icon.png"
+
+# PWA icons for manifest.webmanifest. The card stays inside the maskable safe
+# zone (a centred circle of 80% diameter), so the same files serve both purposes.
+for size in 192 512; do
+  sips -z "$size" "$size" scripts/avatar.png --out "pwa-icon-$size.png" >/dev/null
+  [[ "$(png_size "pwa-icon-$size.png")" == "${size}x${size}" ]] || { echo "Bad resize: pwa-icon-$size.png" >&2; exit 1; }
+  echo "Wrote pwa-icon-$size.png"
+done
