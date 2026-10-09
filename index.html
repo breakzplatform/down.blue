@@ -132,6 +132,8 @@
       border-right: var(--border);
     }
     .db-callout-body { padding: var(--space-5) var(--space-6); font: var(--type-dek); color: var(--text-2); }
+    .db-callout-warn .db-callout-spine { background: var(--ink-yellow); color: var(--on-yellow); }
+    .db-callout-warn .db-callout-body { color: var(--text-1); }
 
     /* History card: a recognisable strip, not a poster. The thumbnail has a
        fixed height, so a row of cards stays short however wide it gets. */
@@ -226,7 +228,20 @@
       <main>
       <h1 class="db-wordmark">down<span class="ink-block tilt-cw">.blue</span></h1>
 
-      <section class="db-panel cast mt-15 mb-6">
+      <aside class="db-callout db-callout-warn cast mt-15 mb-6" role="note">
+        <!-- lucide-static 0.542.0, triangle-alert.svg. The label survives as aria-label. -->
+        <span class="db-callout-spine" role="img" :aria-label="t.warning" :title="t.warning">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" />
+          </svg>
+        </span>
+        <div class="db-callout-body">
+          {{ t.botWarning }} <a href="https://bsky.app/profile/down.blue">{{ t.botWarningShare }}</a> {{ t.botWarningEnd }}
+        </div>
+      </aside>
+
+      <section class="db-panel cast mb-6">
         <h2 class="db-panel-head">
           <span>{{ t.panelTitle }}</span>
         </h2>
@@ -488,10 +503,14 @@
         reopen: "Re-open",
         removeHistory: "Remove from history",
         didYouKnow: "Did you know?",
-        mentionPrefix: "You can mention",
-        mentionMiddle: "in a reply to a video post to get a download link instantly! You can also use the",
+        warning: "Warning",
+        botWarning: "Bluesky is hiding replies from the @down.blue bot again, so mentions may go unanswered for a while. Paste the post link below in the meantime. If you can,",
+        botWarningShare: "share the post about it",
+        botWarningEnd: "so more people find out.",
+        mentionPrefix: "Mention",
+        mentionMiddle: "in a reply to a video post and the bot answers with a download link. On iPhone there's also an",
         iosShortcut: "iOS Shortcut",
-        installNote: "down.blue can also be installed as an app: add it to your home screen. On Android it then shows up in the share sheet, so you can share a post straight to it.",
+        installNote: "You can add down.blue to your home screen and use it like an app. On Android it then shows up in the share menu, so you can send a post straight to it.",
         fromBrazil: "Directly from Brazil by Joselito, with much love and care. This site does not use any cookies or collect any data. This site is not related to Bluesky.",
         support: "Support this project:",
         respect: "Respect copyright and Bluesky's terms of service.",
@@ -563,10 +582,14 @@
         reopen: "Reabrir",
         removeHistory: "Remover do histórico",
         didYouKnow: "Você sabia?",
-        mentionPrefix: "Você pode mencionar",
-        mentionMiddle: "em uma resposta a um post de vídeo para receber o link de download na hora! Também dá pra usar o",
+        warning: "Aviso",
+        botWarning: "O Bluesky voltou a esconder as respostas do bot @down.blue, então as menções podem ficar sem resposta por um tempo. Enquanto isso, cole o link do post aqui embaixo. Se puder,",
+        botWarningShare: "compartilhe o post sobre isso",
+        botWarningEnd: "pra mais gente ficar sabendo.",
+        mentionPrefix: "Mencione",
+        mentionMiddle: "numa resposta a um post de vídeo e o bot responde com o link de download. No iPhone, também tem um",
         iosShortcut: "atalho do iOS",
-        installNote: "O down.blue também pode ser instalado como app: adicione à tela de início. No Android ele passa a aparecer no menu de compartilhar, pra mandar um post direto pra ele.",
+        installNote: "Dá pra adicionar o down.blue à tela de início e usar como app. No Android ele passa a aparecer no menu de compartilhar, e você manda o post direto pra ele.",
         fromBrazil: "Direto do Brasil pelo Joselito, com muito carinho. Este site não usa cookies nem coleta dados. Este site não tem relação com o Bluesky.",
         support: "Apoie este projeto:",
         respect: "Respeite direitos autorais e os termos de uso do Bluesky.",
