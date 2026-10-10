@@ -27,7 +27,7 @@
 
   /* links */
   --link: #0000EE;
-  --link-visited: #551A8B;
+  --link-visited: #7A2E6B;
   --link-active: #9E1200;
 
   /* lines, shadow, focus */
@@ -60,6 +60,8 @@
   --on-down: #FFFFFF;
   --ink-pix: #32BCAD;
   --on-pix: #000000;
+  --ink-sponsors: #FFB3D6;
+  --on-sponsors: #000000;
 
   /* the sixteen inks */
   --ink-blue: #0000EE;

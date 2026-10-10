@@ -70,6 +70,10 @@
   --ink: var(--ink-pix);
   --on-ink: var(--on-pix);
 }
+.ink-sponsors {
+  --ink: var(--ink-sponsors);
+  --on-ink: var(--on-sponsors);
+}
 .ink-spot {
   --ink: var(--spot);
   --on-ink: var(--on-spot);

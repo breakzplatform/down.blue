@@ -56,6 +56,8 @@
   --on-down: #000000;
   --ink-pix: #FFB000;
   --on-pix: #000000;
+  --ink-sponsors: #FF8A1F;
+  --on-sponsors: #000000;
 
   /* the sixteen inks */
   --ink-blue: #FFB000;

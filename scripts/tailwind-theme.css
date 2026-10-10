@@ -90,6 +90,7 @@
   --color-status-error: var(--status-error);  --color-on-error: var(--on-error);
   --color-ink-down: var(--ink-down);          --color-on-down: var(--on-down);
   --color-ink-pix: var(--ink-pix);            --color-on-pix: var(--on-pix);
+  --color-ink-sponsors: var(--ink-sponsors);  --color-on-sponsors: var(--on-sponsors);
 
   /* the sixteen inks and their legible partners */
   --color-ink-blue: var(--ink-blue);          --color-on-blue: var(--on-blue);
