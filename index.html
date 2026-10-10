@@ -1406,7 +1406,7 @@
           this.status = this.t.statusDownloadingHls;
           try {
             const { playlistUrl, postId } = this.videoSource;
-            const tsBlob = await this.processPlaylist(playlistUrl, op.signal);
+            const { blob: tsBlob, segmentSizes } = await this.processPlaylist(playlistUrl, op.signal);
             if (!this.operationOwns(op.id)) return;
             const outputName = `video-${postId}-720p.mp4`;
 
@@ -1415,7 +1415,7 @@
 
             let mp4Blob = null;
             try {
-              mp4Blob = await tsBlobToMp4WithMuxjs(tsBlob);
+              mp4Blob = await tsBlobToMp4WithMuxjs(tsBlob, segmentSizes);
               if (!this.operationOwns(op.id)) return;
             } catch (muxErr) {
               if (!this.operationOwns(op.id)) return;
@@ -1552,7 +1552,7 @@
           const variant = await variantRes.text();
           this.throwIfStale(opId);
           const segs = this.parseSegmentUrls(variant, variantUrl);
-          return await this.downloadSegments(segs, signal);
+          return await this.downloadSegments(segs, signal);  // { blob, segmentSizes }
         },
         extractSubtitleLang(m3u8) {
           for (const line of m3u8.split("\n")) {
@@ -1621,7 +1621,10 @@
             await Promise.all(batch.map((u, k) => fetchOne(u, i + k)));
             this.throwIfStale(opId);
           }
-          return new Blob(chunks, { type: "video/MP2T" });
+          return {
+            blob: new Blob(chunks, { type: "video/MP2T" }),
+            segmentSizes: chunks.map(chunk => chunk.byteLength),
+          };
         },
 
         // ---- Generic fetch with progress (for blob endpoints that send Content-Length) ----
@@ -1692,33 +1695,34 @@
     // Real TS→MP4 remux using mux.js (no transcoding, no WASM, no SharedArrayBuffer).
     // Bluesky HLS segments are H.264+AAC inside MPEG-TS — mux.js produces a fragmented MP4
     // (init segment + media segments) that Android, iOS and modern browsers play natively.
-    function tsBlobToMp4WithMuxjs(tsBlob) {
-      return new Promise(async (resolve, reject) => {
-        try {
-          if (typeof muxjs === "undefined" || !muxjs.mp4 || !muxjs.mp4.Transmuxer) {
-            return reject(new Error("mux.js not loaded"));
-          }
-          const bytes = new Uint8Array(await tsBlob.arrayBuffer());
-          const transmuxer = new muxjs.mp4.Transmuxer({ keepOriginalTimestamps: false });
-          const parts = [];
-          let initPushed = false;
-          transmuxer.on("data", (segment) => {
-            if (!initPushed && segment.initSegment) {
-              parts.push(segment.initSegment);
-              initPushed = true;
-            }
-            if (segment.data) parts.push(segment.data);
-          });
-          transmuxer.on("done", () => {
-            if (!parts.length) return reject(new Error("mux.js produced no output"));
-            resolve(new Blob(parts, { type: "video/mp4" }));
-          });
-          transmuxer.push(bytes);
-          transmuxer.flush();
-        } catch (err) {
-          reject(err);
+    // Segments are pushed and flushed one at a time: a single push+flush keeps every sample
+    // of the whole video in the JS heap (~7x the TS size, 1.5 GB for a 9 min 720p video).
+    // Output has the same packet count and duration as the one-shot remux.
+    async function tsBlobToMp4WithMuxjs(tsBlob, segmentSizes) {
+      if (typeof muxjs === "undefined" || !muxjs.mp4 || !muxjs.mp4.Transmuxer) {
+        throw new Error("mux.js not loaded");
+      }
+      const transmuxer = new muxjs.mp4.Transmuxer({ keepOriginalTimestamps: false });
+      const parts = [];
+      let initPushed = false;
+      transmuxer.on("data", (segment) => {
+        if (!initPushed && segment.initSegment) {
+          parts.push(new Blob([segment.initSegment]));
+          initPushed = true;
         }
+        // Wrapping in a Blob moves the bytes out of the JS heap right away.
+        if (segment.data) parts.push(new Blob([segment.data]));
       });
+      const sizes = segmentSizes && segmentSizes.length ? segmentSizes : [tsBlob.size];
+      let offset = 0;
+      for (const size of sizes) {
+        const bytes = new Uint8Array(await tsBlob.slice(offset, offset + size).arrayBuffer());
+        offset += size;
+        transmuxer.push(bytes);
+        transmuxer.flush();
+      }
+      if (!parts.length) throw new Error("mux.js produced no output");
+      return new Blob(parts, { type: "video/mp4" });
     }
 
     function extensionFromMime(mime) {
