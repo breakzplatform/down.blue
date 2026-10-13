@@ -524,8 +524,11 @@
         shareSharedLong: "Long link shared.",
         shareSharedShort: "Short link shared.",
         shareFallbackLong: "Short link failed; using the long link.",
+        shareFallbackShrtr: "v.gd failed; using a fallback short link.",
         shareUnavailable: "Sharing is not available in this browser.",
         shareCopyFailed: "Could not copy the link.",
+        statusResolvingShortLink: "Opening short link...",
+        errShortLink: "Could not open this short link.",
         fromBrazil: "Directly from Brazil by Joselito, with much love and care. This site does not use any cookies or collect any data. This site is not related to Bluesky.",
         support: "Support this project:",
         respect: "Respect copyright and Bluesky's terms of service.",
@@ -612,8 +615,11 @@
         shareSharedLong: "Link longo compartilhado.",
         shareSharedShort: "Link curto compartilhado.",
         shareFallbackLong: "O link curto falhou; usando o link longo.",
+        shareFallbackShrtr: "O v.gd falhou; usando um link curto alternativo.",
         shareUnavailable: "Compartilhamento indisponível neste navegador.",
         shareCopyFailed: "Não foi possível copiar o link.",
+        statusResolvingShortLink: "Abrindo link curto...",
+        errShortLink: "Não foi possível abrir este link curto.",
         fromBrazil: "Direto do Brasil pelo Joselito, com muito carinho. Este site não usa cookies nem coleta dados. Este site não tem relação com o Bluesky.",
         support: "Apoie este projeto:",
         respect: "Respeite direitos autorais e os termos de uso do Bluesky.",
@@ -755,6 +761,8 @@
       },
       mounted() {
         document.documentElement.lang = this.lang === "pt" ? "pt-BR" : "en";
+        const shortCode = parseVGdHash(location.hash);
+        if (shortCode) this.resolveShortHash(shortCode);
         this.loadHistory();
         this.backfillHistoryThumbnails();
 
@@ -851,6 +859,47 @@
         },
         async shortenUrl(longUrl) {
           if (this.shareShortUrlFor === longUrl && this.shareShortUrl) return this.shareShortUrl;
+          let fallbackError = null;
+          try {
+            const shortUrl = await this.shortenWithVGd(longUrl);
+            this.shareShortUrl = shortUrl;
+            this.shareShortUrlFor = longUrl;
+            return shortUrl;
+          } catch (error) {
+            fallbackError = error;
+            console.warn("v.gd short link failed; falling back to Shrtr.", error);
+          }
+          try {
+            const shortUrl = await this.shortenWithShrtr(longUrl);
+            this.shareStatus = this.t.shareFallbackShrtr;
+            this.shareShortUrl = shortUrl;
+            this.shareShortUrlFor = longUrl;
+            return shortUrl;
+          } catch (error) {
+            console.warn("Shrtr short link failed.", error);
+            throw fallbackError || error;
+          }
+        },
+        async shortenWithVGd(longUrl) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 8000);
+          try {
+            const res = await fetch(`https://v.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`, {
+              signal: controller.signal,
+            });
+            if (!res.ok) throw new Error(`v.gd returned ${res.status}`);
+            const data = await res.json();
+            if (data.errorcode) throw new Error(data.errormessage || `v.gd error ${data.errorcode}`);
+            const shortUrl = new URL(data.shorturl || "");
+            if (shortUrl.hostname !== "v.gd") throw new Error("v.gd response used an unexpected host");
+            const match = shortUrl.pathname.match(/^\/([A-Za-z0-9_]{4,30})\/?$/);
+            if (!match) throw new Error("v.gd response missing short code");
+            return `https://down.blue/#${match[1]}`;
+          } finally {
+            clearTimeout(timeoutId);
+          }
+        },
+        async shortenWithShrtr(longUrl) {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 8000);
           try {
@@ -863,11 +912,28 @@
             if (!res.ok) throw new Error(`Shortener returned ${res.status}`);
             const data = await res.json();
             if (!data.short_url || typeof data.short_url !== "string") throw new Error("Shortener response missing short_url");
-            this.shareShortUrl = data.short_url;
-            this.shareShortUrlFor = longUrl;
             return data.short_url;
           } finally {
             clearTimeout(timeoutId);
+          }
+        },
+        async resolveShortHash(code) {
+          this.loadingMode = "shortlink";
+          this.status = this.t.statusResolvingShortLink;
+          try {
+            const res = await fetch(`https://v.gd/forward.php?format=json&shorturl=${encodeURIComponent(code)}`);
+            if (!res.ok) throw new Error(`v.gd forward returned ${res.status}`);
+            const data = await res.json();
+            if (data.errorcode) throw new Error(data.errormessage || `v.gd error ${data.errorcode}`);
+            const target = new URL(data.url || "");
+            if (!["http:", "https:"].includes(target.protocol) || target.hostname !== "down.blue") {
+              throw new Error("Short link target is not down.blue");
+            }
+            location.replace(target.toString());
+          } catch (error) {
+            console.error("Short link resolve failed:", error);
+            this.status = this.t.errShortLink;
+            this.loadingMode = null;
           }
         },
 
@@ -1858,6 +1924,10 @@
     }
     function videoThumbnailUrl(did, cid) {
       return `https://video.bsky.app/watch/${encodeURIComponent(did)}/${encodeURIComponent(cid)}/thumbnail.jpg`;
+    }
+    function parseVGdHash(hash) {
+      const match = String(hash || "").match(/^#([A-Za-z0-9_]{4,30})$/);
+      return match ? match[1] : null;
     }
     async function copyText(text) {
       if (navigator.clipboard?.writeText && window.isSecureContext) {
