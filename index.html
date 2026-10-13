@@ -295,6 +295,24 @@
             </button>
           </div>
 
+          <fieldset v-if="videoSource" class="db-choice">
+            <legend class="db-choice-title">{{ t.shareTitle }}</legend>
+            <p class="db-note mb-4">{{ t.shareHint }}</p>
+            <label class="mb-4 flex items-center gap-2 text-body-sm text-text-2">
+              <input v-model="shareUseShort" type="checkbox" :disabled="shareBusy" />
+              <span>{{ t.shareShortLabel }}</span>
+            </label>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" @click="copyShareLink" :disabled="shareBusy" class="db-btn cast press">
+                {{ shareBusy ? t.sharePreparing : t.copyShareLink }}
+              </button>
+              <button v-if="webShareAvailable" type="button" @click="shareDownloadLink" :disabled="shareBusy" class="db-btn db-btn-primary cast press">
+                {{ shareBusy ? t.sharePreparing : t.shareLink }}
+              </button>
+            </div>
+            <p v-if="shareStatus" class="db-status mt-4">{{ shareStatus }}</p>
+          </fieldset>
+
           <!-- Feedback follows the action that causes it. While the post is
                being fetched neither action block is rendered, so this still
                lands directly under the form. -->
@@ -494,7 +512,20 @@
         mentionPrefix: "Mention",
         mentionMiddle: "in a reply to a video post and the bot answers with a download link. On iPhone there's also an",
         iosShortcut: "iOS Shortcut",
-        installNote: "On Android, add down.blue to your home screen to install it as an app: it then shows up in the share menu, so you can send a post straight to it.",
+        installNote: "On Android, add down.blue to your home screen from Chrome to install it as an app: only that Chrome-installed PWA appears as a share target.",
+        shareTitle: "Share the download",
+        shareHint: "Copy or share a link that opens this downloader with the current post filled in.",
+        shareShortLabel: "Use a short link when possible",
+        copyShareLink: "Copy link",
+        shareLink: "Share link",
+        sharePreparing: "Preparing...",
+        shareCopiedLong: "Long link copied.",
+        shareCopiedShort: "Short link copied.",
+        shareSharedLong: "Long link shared.",
+        shareSharedShort: "Short link shared.",
+        shareFallbackLong: "Short link failed; using the long link.",
+        shareUnavailable: "Sharing is not available in this browser.",
+        shareCopyFailed: "Could not copy the link.",
         fromBrazil: "Directly from Brazil by Joselito, with much love and care. This site does not use any cookies or collect any data. This site is not related to Bluesky.",
         support: "Support this project:",
         respect: "Respect copyright and Bluesky's terms of service.",
@@ -569,7 +600,20 @@
         mentionPrefix: "Mencione",
         mentionMiddle: "numa resposta a um post de vídeo e o bot responde com o link de download. No iPhone, também tem um",
         iosShortcut: "atalho do iOS",
-        installNote: "No Android, adicione o down.blue à tela de início para instalar como app: ele passa a aparecer no menu de compartilhar, e você manda o post direto pra ele.",
+        installNote: "No Android, instale o down.blue pela tela de início do Chrome: só essa PWA instalada pelo Chrome aparece como destino de compartilhamento.",
+        shareTitle: "Compartilhar download",
+        shareHint: "Copie ou compartilhe um link que abre este baixador com o post atual preenchido.",
+        shareShortLabel: "Usar link curto quando possível",
+        copyShareLink: "Copiar link",
+        shareLink: "Compartilhar link",
+        sharePreparing: "Preparando...",
+        shareCopiedLong: "Link longo copiado.",
+        shareCopiedShort: "Link curto copiado.",
+        shareSharedLong: "Link longo compartilhado.",
+        shareSharedShort: "Link curto compartilhado.",
+        shareFallbackLong: "O link curto falhou; usando o link longo.",
+        shareUnavailable: "Compartilhamento indisponível neste navegador.",
+        shareCopyFailed: "Não foi possível copiar o link.",
         fromBrazil: "Direto do Brasil pelo Joselito, com muito carinho. Este site não usa cookies nem coleta dados. Este site não tem relação com o Bluesky.",
         support: "Apoie este projeto:",
         respect: "Respeite direitos autorais e os termos de uso do Bluesky.",
@@ -655,6 +699,11 @@
           currentPostData: null,
           videoSource: null,
           loadingMode: null,
+          shareUseShort: false,
+          shareBusy: false,
+          shareStatus: "",
+          shareShortUrl: "",
+          shareShortUrlFor: "",
           pdsCache: {},
           thumbnailErrors: {},
         };
@@ -696,6 +745,9 @@
           const source = this.videoSource;
           if (source?.kind !== "bluesky-video" || !source.did || !source.cid) return null;
           return videoThumbnailUrl(source.did, source.cid);
+        },
+        webShareAvailable() {
+          return typeof navigator.share === "function";
         },
       },
       watch: {
@@ -752,6 +804,71 @@
           if (name === "light") document.documentElement.removeAttribute("data-theme");
           else document.documentElement.setAttribute("data-theme", name);
           try { localStorage.setItem("theme", name); } catch {}
+        },
+
+        // ---- Share link ----
+        downloadShareUrl() {
+          return `https://down.blue/?url=${encodeURIComponent(this.postUrl)}`;
+        },
+        async copyShareLink() {
+          const { url, shortened } = await this.prepareShareUrl();
+          try {
+            await copyText(url);
+            this.shareStatus = shortened ? this.t.shareCopiedShort : this.t.shareCopiedLong;
+          } catch (error) {
+            console.error("Copy failed:", error);
+            this.shareStatus = this.t.shareCopyFailed;
+          }
+        },
+        async shareDownloadLink() {
+          if (!this.webShareAvailable) {
+            this.shareStatus = this.t.shareUnavailable;
+            return;
+          }
+          const { url, shortened } = await this.prepareShareUrl();
+          try {
+            await navigator.share({ title: "down.blue", url });
+            this.shareStatus = shortened ? this.t.shareSharedShort : this.t.shareSharedLong;
+          } catch (error) {
+            if (error.name !== "AbortError") console.error("Share failed:", error);
+          }
+        },
+        async prepareShareUrl() {
+          const longUrl = this.downloadShareUrl();
+          this.shareStatus = "";
+          if (!this.shareUseShort) return { url: longUrl, shortened: false };
+          this.shareBusy = true;
+          try {
+            const shortUrl = await this.shortenUrl(longUrl);
+            return { url: shortUrl, shortened: true };
+          } catch (error) {
+            console.warn("Short link failed; falling back to long link.", error);
+            this.shareStatus = this.t.shareFallbackLong;
+            return { url: longUrl, shortened: false };
+          } finally {
+            this.shareBusy = false;
+          }
+        },
+        async shortenUrl(longUrl) {
+          if (this.shareShortUrlFor === longUrl && this.shareShortUrl) return this.shareShortUrl;
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 8000);
+          try {
+            const res = await fetch("https://shrtr.top/api/v1/shorten", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url: longUrl }),
+              signal: controller.signal,
+            });
+            if (!res.ok) throw new Error(`Shortener returned ${res.status}`);
+            const data = await res.json();
+            if (!data.short_url || typeof data.short_url !== "string") throw new Error("Shortener response missing short_url");
+            this.shareShortUrl = data.short_url;
+            this.shareShortUrlFor = longUrl;
+            return data.short_url;
+          } finally {
+            clearTimeout(timeoutId);
+          }
         },
 
         // ---- History ----
@@ -1683,6 +1800,9 @@
           this.subtitleUrl = "";
           this.postCid = "";
           this.videoSource = null;
+          this.shareStatus = "";
+          this.shareShortUrl = "";
+          this.shareShortUrlFor = "";
         },
       },
     }).mount("#app");
@@ -1738,6 +1858,24 @@
     }
     function videoThumbnailUrl(did, cid) {
       return `https://video.bsky.app/watch/${encodeURIComponent(did)}/${encodeURIComponent(cid)}/thumbnail.jpg`;
+    }
+    async function copyText(text) {
+      if (navigator.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.top = "-1000px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        if (!document.execCommand("copy")) throw new Error("Copy command failed");
+      } finally {
+        textarea.remove();
+      }
     }
     function triggerDownload(blob, filename) {
       const url = URL.createObjectURL(blob);
