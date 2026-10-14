@@ -1,0 +1,12 @@
+{
+  "name": "down.blue",
+  "private": true,
+  "description": "Tests for down.blue. The site itself has no build step and no dependencies.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

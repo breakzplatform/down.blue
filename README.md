@@ -51,7 +51,9 @@ Then open <http://localhost:8080>. ffmpeg runs single-threaded, so you do not ne
 .
 ├── index.html               # the whole app: markup, styles, Vue code
 ├── _headers                 # COOP/COEP headers for Netlify and Cloudflare Pages
-├── netlify.toml             # publish settings; strips scripts/ from the deployed site
+├── netlify.toml             # publish settings; strips scripts/ and the tests from the deployed site
+├── package.json             # `npm test` only, no dependencies
+├── test/                    # Node tests for the functions inside index.html
 ├── og.png                   # link preview image
 ├── apple-touch-icon.png     # home screen icon
 ├── lib/                     # vendored libraries, version in the file name
@@ -96,7 +98,21 @@ Only the post lookup has a timeout. If a later download hangs, reload the page.
 
 Cancelling a download does not stop an ffmpeg conversion that has already started. The result is discarded, but the work runs to the end.
 
-There are no automated tests yet. The HLS parsers (`parseHighestQualityVideoUrl`, `parseSegmentUrls`, `extractSubtitleLang`) and the URL and embed parsers (`extractProfileAndPost`, `extractVideoInfo`) are the best place to start.
+The automated tests cover URL parsing only. The HLS parsers (`parseHighestQualityVideoUrl`, `parseSegmentUrls`, `extractSubtitleLang`), the embed parser (`extractVideoInfo`) and the da.gd short links are the next place to add them.
+
+## Testing
+
+The tests use Node's built-in test runner (Node 20 or later) and have no dependencies:
+
+```sh
+npm test        # or: node --test
+```
+
+`test/load-page.js` reads the app script inlined in `index.html` and evaluates it with `node:vm`, with small stubs for Vue, ffmpeg and the DOM, so the tests call the page's own functions and Vue methods without a browser or a build step. Network calls go to a stubbed `fetch`; the tests never contact Bluesky.
+
+They cover `extractProfileAndPost`: bsky.app and other Atmosphere links, trailing segments, `at://` URIs, invalid actors and record keys, `.` and `..`.
+
+Tests do not replace the browser checks below.
 
 ## Contributing
 
