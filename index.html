@@ -87,7 +87,9 @@
        The margin above separates the step from the one before it; the padding
        below the rule only has to clear the legend, which the browser hangs on
        the border line. */
-    .db-choice { border: 0; margin: var(--space-7) 0 0; padding: var(--space-5) 0 0; border-top: var(--border); }
+    /* min-width: a fieldset defaults to min-content, which would let a long
+       file name push the row out of the panel instead of truncating. */
+    .db-choice { border: 0; margin: var(--space-7) 0 0; padding: var(--space-5) 0 0; border-top: var(--border); min-width: 0; }
     /* The legend sits in the gap it punches in the fieldset's top border, which
        turns the rule into a labelled one. That is the native behaviour and the
        right look here, so the padding makes the gap deliberate. */
@@ -101,6 +103,14 @@
       padding: var(--space-5); text-align: left; width: 100%;
     }
     .db-mode-label { font: var(--weight-bold) var(--text-body)/1.25 var(--font-body); }
+
+    /* Once a file is ready the format step steps aside for this row: Save file
+       takes all the room it can, Back, Copy link and Share stay icon-sized. The
+       file name keeps its case, so it is the one sub-label not set in caps. */
+    .db-download-row { display: flex; gap: var(--space-3); }
+    .db-download-row .db-btn-mode { flex: 1; min-width: 0; }
+    .db-btn-icon { flex: none; padding: 0 var(--space-4); }
+    .db-filename { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; }
 
     /* An <input> cannot carry the ::before/::after the halftone needs, so the
        casting box is a wrapper and the input inside it is bare. Focus lands on
@@ -261,7 +271,7 @@
 
           <!-- Bluesky native video: the same video in three formats. fieldset so
                the grouping reaches assistive tech, not just the eye. -->
-          <fieldset v-if="videoSource && videoSource.kind === 'bluesky-video'" class="db-choice">
+          <fieldset v-if="videoSource && videoSource.kind === 'bluesky-video' && !downloadReady" class="db-choice">
             <legend class="db-choice-title">{{ t.pickMode }}</legend>
             <p class="db-note mb-4">{{ t.pickModeHint }}</p>
             <div class="grid gap-2 sm:grid-cols-3">
@@ -281,7 +291,7 @@
           </fieldset>
 
           <!-- GIF: download options -->
-          <div v-if="videoSource && videoSource.kind === 'gif'" class="mt-4">
+          <div v-if="videoSource && videoSource.kind === 'gif' && !downloadReady" class="mt-4">
             <div v-if="videoSource.mp4Url" class="grid gap-2 sm:grid-cols-2">
               <button @click="downloadGif(true)" :disabled="loadingMode !== null" class="db-btn db-btn-primary cast press">
                 {{ t.btnGifMp4 }}
@@ -311,8 +321,41 @@
             </p>
           </div>
 
-          <a v-if="downloadReady && downloadLink && downloadName" :href="downloadLink" :download="downloadName"
-            class="db-btn mt-4 w-full cast press">{{ t.saveFile }} ({{ downloadName }})</a>
+          <fieldset v-if="downloadReady && downloadLink && downloadName" class="db-choice">
+            <legend class="db-choice-title">{{ t.downloadTitle }}</legend>
+            <div class="db-download-row">
+              <button type="button" @click="backToFormats" class="db-btn db-btn-icon cast press" :aria-label="t.back" :title="t.back">
+                <!-- lucide-static 0.542.0: arrow-left, link, share-2 -->
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+                  <path d="m12 19-7-7 7-7" /><path d="M19 12H5" />
+                </svg>
+              </button>
+              <a :href="downloadLink" :download="downloadName" class="db-btn db-btn-mode cast press">
+                <span class="db-mode-label">{{ t.saveFile }}</span>
+                <span class="db-micro db-filename">{{ downloadName }}</span>
+              </a>
+              <button type="button" @click="copyShareLink" :disabled="shareBusy" class="db-btn db-btn-icon cast press"
+                :aria-label="t.copyShareLink" :title="t.copyShareLink">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                </svg>
+              </button>
+              <button v-if="webShareAvailable" type="button" @click="shareDownloadLink" :disabled="shareBusy"
+                class="db-btn db-btn-icon cast press" :aria-label="t.shareLink" :title="t.shareLink">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+                  <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+                  <path d="m8.59 13.51 6.83 3.98" /><path d="m15.41 6.51-6.82 3.98" />
+                </svg>
+              </button>
+            </div>
+            <div role="status" aria-live="polite">
+              <p v-if="shareStatus" class="db-status mt-4" :class="{ 'db-status-error': shareStatusIsError }">{{ shareStatus }}</p>
+            </div>
+          </fieldset>
 
           <!-- Subtitle download (after HLS path) -->
           <a v-if="subtitleUrl" :href="subtitleUrl" class="db-btn mt-2 w-full cast press"
@@ -494,7 +537,18 @@
         mentionPrefix: "Mention",
         mentionMiddle: "in a reply to a video post and the bot answers with a download link. On iPhone there's also an",
         iosShortcut: "iOS Shortcut",
-        installNote: "On Android, add down.blue to your home screen to install it as an app: it then shows up in the share menu, so you can send a post straight to it.",
+        installNote: "On Android, add down.blue to your home screen from Chrome to install it as an app. That way, down.blue shows up in the share menu.",
+        downloadTitle: "Download",
+        back: "Back to formats",
+        copyShareLink: "Copy link",
+        shareLink: "Share link",
+        shareCopied: "Link copied.",
+        shareCopiedLong: "Couldn't shorten the link, so the full link was copied.",
+        shareSharedLong: "Couldn't shorten the link, so the full link was shared.",
+        shareRetry: "Short link ready. Tap share again.",
+        shareCopyFailed: "Could not copy the link.",
+        statusResolvingShortLink: "Opening short link...",
+        errShortLink: "Could not open this short link.",
         fromBrazil: "Directly from Brazil by Joselito, with much love and care. This site does not use any cookies or collect any data. This site is not related to Bluesky.",
         support: "Support this project:",
         respect: "Respect copyright and Bluesky's terms of service.",
@@ -569,7 +623,18 @@
         mentionPrefix: "Mencione",
         mentionMiddle: "numa resposta a um post de vídeo e o bot responde com o link de download. No iPhone, também tem um",
         iosShortcut: "atalho do iOS",
-        installNote: "No Android, adicione o down.blue à tela de início para instalar como app: ele passa a aparecer no menu de compartilhar, e você manda o post direto pra ele.",
+        installNote: "No Android, adicione o down.blue à tela de início pelo Chrome para instalá-lo como app. Assim, o down.blue aparece no menu de compartilhar.",
+        downloadTitle: "Baixar",
+        back: "Voltar aos formatos",
+        copyShareLink: "Copiar link",
+        shareLink: "Compartilhar link",
+        shareCopied: "Link copiado.",
+        shareCopiedLong: "Não deu para encurtar o link, então o link completo foi copiado.",
+        shareSharedLong: "Não deu para encurtar o link, então o link completo foi compartilhado.",
+        shareRetry: "Link curto pronto. Toque em compartilhar de novo.",
+        shareCopyFailed: "Não foi possível copiar o link.",
+        statusResolvingShortLink: "Abrindo link curto...",
+        errShortLink: "Não foi possível abrir este link curto.",
         fromBrazil: "Direto do Brasil pelo Joselito, com muito carinho. Este site não usa cookies nem coleta dados. Este site não tem relação com o Bluesky.",
         support: "Apoie este projeto:",
         respect: "Respeite direitos autorais e os termos de uso do Bluesky.",
@@ -655,6 +720,10 @@
           currentPostData: null,
           videoSource: null,
           loadingMode: null,
+          shareBusy: false,
+          shareStatus: "",
+          shareShortUrl: "",
+          shareShortUrlFor: "",
           pdsCache: {},
           thumbnailErrors: {},
         };
@@ -697,12 +766,20 @@
           if (source?.kind !== "bluesky-video" || !source.did || !source.cid) return null;
           return videoThumbnailUrl(source.did, source.cid);
         },
+        webShareAvailable() {
+          return typeof navigator.share === "function";
+        },
+        shareStatusIsError() {
+          return [this.t.shareCopiedLong, this.t.shareSharedLong, this.t.shareCopyFailed].includes(this.shareStatus);
+        },
       },
       watch: {
         historyQuery() { this.historyPage = 1; },
       },
       mounted() {
         document.documentElement.lang = this.lang === "pt" ? "pt-BR" : "en";
+        const shortCode = parseVGdHash(location.hash);
+        if (shortCode) this.resolveShortHash(shortCode);
         this.loadHistory();
         this.backfillHistoryThumbnails();
 
@@ -752,6 +829,86 @@
           if (name === "light") document.documentElement.removeAttribute("data-theme");
           else document.documentElement.setAttribute("data-theme", name);
           try { localStorage.setItem("theme", name); } catch {}
+        },
+
+        // ---- Download row: back, copy link, share ----
+        backToFormats() {
+          this.cleanupBlobUrls();
+          this.downloadReady = false;
+          this.downloadLink = "";
+          this.downloadName = "";
+          this.subtitleLang = "";
+          this.subtitleUrl = "";
+          this.videoPreviewVisible = false;
+          this.gifPreviewVisible = false;
+          this.status = "";
+          this.shareStatus = "";
+        },
+        downloadShareUrl() {
+          return `https://down.blue/?url=${encodeURIComponent(this.postUrl)}`;
+        },
+        // Resolves to the short link, or to the full one when v.gd fails; the
+        // status line says which, so a full link is never passed off as short.
+        async prepareShareUrl() {
+          const longUrl = this.downloadShareUrl();
+          if (this.shareShortUrlFor === longUrl && this.shareShortUrl) return { url: this.shareShortUrl, shortened: true };
+          this.shareBusy = true;
+          try {
+            const shortUrl = await shortenWithVGd(longUrl);
+            this.shareShortUrl = shortUrl;
+            this.shareShortUrlFor = longUrl;
+            return { url: shortUrl, shortened: true };
+          } catch (error) {
+            console.warn("v.gd short link failed; using the full link.", error);
+            return { url: longUrl, shortened: false };
+          } finally {
+            this.shareBusy = false;
+          }
+        },
+        async copyShareLink() {
+          this.shareStatus = "";
+          // Safari drops clipboard writes made after an await, so the write
+          // starts inside the tap and is handed the link once it exists.
+          const prepared = this.prepareShareUrl();
+          try {
+            await copyText(prepared.then(({ url }) => url));
+            const { shortened } = await prepared;
+            this.shareStatus = shortened ? this.t.shareCopied : this.t.shareCopiedLong;
+          } catch (error) {
+            console.error("Copy failed:", error);
+            this.shareStatus = this.t.shareCopyFailed;
+          }
+        },
+        async shareDownloadLink() {
+          this.shareStatus = "";
+          const cached = this.shareShortUrlFor === this.downloadShareUrl() && this.shareShortUrl;
+          const { url, shortened } = await this.prepareShareUrl();
+          try {
+            await navigator.share({ title: "down.blue", url });
+            if (!shortened) this.shareStatus = this.t.shareSharedLong;
+          } catch (error) {
+            // The share sheet needs a fresh tap; a slow v.gd can outlast it.
+            // The link is cached now, so the next tap opens the sheet at once.
+            if (error.name === "NotAllowedError" && !cached && shortened) this.shareStatus = this.t.shareRetry;
+            else if (error.name !== "AbortError") console.error("Share failed:", error);
+          }
+        },
+        async resolveShortHash(code) {
+          this.loadingMode = "shortlink";
+          this.status = this.t.statusResolvingShortLink;
+          try {
+            const data = await vgdJsonp("forward.php", { shorturl: code });
+            if (data.errorcode) throw new Error(data.errormessage || `v.gd error ${data.errorcode}`);
+            const target = new URL(data.url || "");
+            if (target.protocol !== "https:" || target.hostname !== "down.blue") {
+              throw new Error("Short link target is not down.blue");
+            }
+            location.replace(target.toString());
+          } catch (error) {
+            console.error("Short link resolve failed:", error);
+            this.status = this.t.errShortLink;
+            this.loadingMode = null;
+          }
         },
 
         // ---- History ----
@@ -1683,6 +1840,9 @@
           this.subtitleUrl = "";
           this.postCid = "";
           this.videoSource = null;
+          this.shareStatus = "";
+          this.shareShortUrl = "";
+          this.shareShortUrlFor = "";
         },
       },
     }).mount("#app");
@@ -1738,6 +1898,69 @@
     }
     function videoThumbnailUrl(did, cid) {
       return `https://video.bsky.app/watch/${encodeURIComponent(did)}/${encodeURIComponent(cid)}/thumbnail.jpg`;
+    }
+    function parseVGdHash(hash) {
+      const match = String(hash || "").match(/^#([A-Za-z0-9_]{4,30})$/);
+      return match ? match[1] : null;
+    }
+    // v.gd sends no CORS headers, so fetch() can never read its answers; its
+    // API also speaks JSONP (callback=), which a <script> tag can load.
+    function vgdJsonp(endpoint, params, timeoutMs = 8000) {
+      return new Promise((resolve, reject) => {
+        const callback = `vgd${Date.now()}${Math.random().toString(36).slice(2)}`;
+        const script = document.createElement("script");
+        let settled = false;
+        const finish = (error, data) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          delete window[callback];
+          script.remove();
+          error ? reject(error) : resolve(data);
+        };
+        const timer = setTimeout(() => finish(new Error("v.gd timed out")), timeoutMs);
+        window[callback] = (data) => finish(null, data);
+        // A plain-text error page loads fine but never calls back.
+        script.onload = () => finish(new Error("v.gd returned no data"));
+        script.onerror = () => finish(new Error("v.gd could not be reached"));
+        const query = new URLSearchParams({ ...params, format: "json", callback });
+        script.src = `https://v.gd/${endpoint}?${query}`;
+        document.head.appendChild(script);
+      });
+    }
+    async function shortenWithVGd(longUrl) {
+      const data = await vgdJsonp("create.php", { url: longUrl });
+      if (data.errorcode) throw new Error(data.errormessage || `v.gd error ${data.errorcode}`);
+      const shortUrl = new URL(data.shorturl || "");
+      if (shortUrl.hostname !== "v.gd") throw new Error("v.gd response used an unexpected host");
+      const match = shortUrl.pathname.match(/^\/([A-Za-z0-9_]{4,30})\/?$/);
+      if (!match) throw new Error("v.gd response missing short code");
+      return `https://down.blue/#${match[1]}`;
+    }
+    // Takes the text or a promise of it (see copyShareLink).
+    async function copyText(text) {
+      if (window.isSecureContext && typeof ClipboardItem === "function" && navigator.clipboard?.write) {
+        const blob = Promise.resolve(text).then((value) => new Blob([value], { type: "text/plain" }));
+        await navigator.clipboard.write([new ClipboardItem({ "text/plain": blob })]);
+        return;
+      }
+      text = await text;
+      if (navigator.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.top = "-1000px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        if (!document.execCommand("copy")) throw new Error("Copy command failed");
+      } finally {
+        textarea.remove();
+      }
     }
     function triggerDownload(blob, filename) {
       const url = URL.createObjectURL(blob);
