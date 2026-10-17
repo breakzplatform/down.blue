@@ -41,7 +41,7 @@ render() {
   local page="$1" width="$2" height="$3" output="$4" capture size
   capture="$(mktemp -t social).png"
   "$CHROME" --headless=new --disable-gpu --hide-scrollbars \
-    --force-device-scale-factor=1 --window-size="$width,$height" \
+    --force-device-scale-factor=1 --force-color-profile=srgb --window-size="$width,$height" \
     --virtual-time-budget=5000 \
     --screenshot="$capture" "$BASE/$page" 2>/dev/null
   size="$(python3 -c 'import struct,sys; d=open(sys.argv[1],"rb").read(24); print("%dx%d" % struct.unpack(">II", d[16:24]))' "$capture")"
