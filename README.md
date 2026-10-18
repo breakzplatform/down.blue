@@ -98,21 +98,20 @@ Only the post lookup has a timeout. If a later download hangs, reload the page.
 
 Cancelling a download does not stop an ffmpeg conversion that has already started. The result is discarded, but the work runs to the end.
 
-The automated tests cover URL parsing only. The HLS parsers (`parseHighestQualityVideoUrl`, `parseSegmentUrls`, `extractSubtitleLang`), the embed parser (`extractVideoInfo`) and the da.gd short links are the next place to add them.
-
 ## Testing
 
-The tests use Node's built-in test runner (Node 20 or later) and have no dependencies:
+The tests use Node's built-in test runner (Node 20 or later) and have no dependencies; there is no build step.
 
 ```sh
-npm test        # or: node --test
+npm test                 # unit tests (offline)
+npm run test:contract    # read-only calls to the real da.gd; skipped offline or with SKIP_NETWORK=1
+npm run smoke            # after a deploy: checks https://down.blue/ and a da.gd round trip
+npm run smoke -- https://staging.example/   # same check against another origin
 ```
 
-`test/load-page.js` reads the app script inlined in `index.html` and evaluates it with `node:vm`, with small stubs for Vue, ffmpeg and the DOM, so the tests call the page's own functions and Vue methods without a browser or a build step. Network calls go to a stubbed `fetch`; the tests never contact Bluesky.
+The unit tests read the app script inlined in `index.html` and evaluate it in a sandbox (`test/load-page.js`, `test/page-source.mjs`) with small stubs for Vue, ffmpeg, the DOM and `fetch`, so they call the page's own functions without a browser and never contact Bluesky. They cover `extractProfileAndPost` (bsky.app and other Atmosphere links, trailing segments, `at://` URIs, invalid actors and record keys) and the da.gd short links: a successful shortening must not return the long link, and a failed one is reported as a fallback and not cached.
 
-They cover `extractProfileAndPost`: bsky.app and other Atmosphere links, trailing segments, `at://` URIs, invalid actors and record keys, `.` and `..`.
-
-Tests do not replace the browser checks below.
+The HLS parsers (`parseHighestQualityVideoUrl`, `parseSegmentUrls`, `extractSubtitleLang`) and the embed parser (`extractVideoInfo`) are still untested and are the next place to add coverage. Tests do not replace the browser checks below.
 
 ## Contributing
 

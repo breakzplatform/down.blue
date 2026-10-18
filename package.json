@@ -4,7 +4,9 @@
   "description": "Tests for down.blue. The site itself has no build step and no dependencies.",
   "license": "MIT",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test test/*.test.js test/*.test.mjs",
+    "test:contract": "node --test test/contract/",
+    "smoke": "node test/smoke.mjs"
   },
   "engines": {
     "node": ">=20"
