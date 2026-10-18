@@ -778,7 +778,7 @@
       },
       mounted() {
         document.documentElement.lang = this.lang === "pt" ? "pt-BR" : "en";
-        const shortCode = parseVGdHash(location.hash);
+        const shortCode = parseShortHash(location.hash);
         if (shortCode) this.resolveShortHash(shortCode);
         this.loadHistory();
         this.backfillHistoryThumbnails();
@@ -847,19 +847,19 @@
         downloadShareUrl() {
           return `https://down.blue/?url=${encodeURIComponent(this.postUrl)}`;
         },
-        // Resolves to the short link, or to the full one when v.gd fails; the
+        // Resolves to the short link, or to the full one when da.gd fails; the
         // status line says which, so a full link is never passed off as short.
         async prepareShareUrl() {
           const longUrl = this.downloadShareUrl();
           if (this.shareShortUrlFor === longUrl && this.shareShortUrl) return { url: this.shareShortUrl, shortened: true };
           this.shareBusy = true;
           try {
-            const shortUrl = await shortenWithVGd(longUrl);
+            const shortUrl = await shortenWithDagd(longUrl);
             this.shareShortUrl = shortUrl;
             this.shareShortUrlFor = longUrl;
             return { url: shortUrl, shortened: true };
           } catch (error) {
-            console.warn("v.gd short link failed; using the full link.", error);
+            console.warn("da.gd short link failed; using the full link.", error);
             return { url: longUrl, shortened: false };
           } finally {
             this.shareBusy = false;
@@ -887,7 +887,7 @@
             await navigator.share({ title: "down.blue", url });
             if (!shortened) this.shareStatus = this.t.shareSharedLong;
           } catch (error) {
-            // The share sheet needs a fresh tap; a slow v.gd can outlast it.
+            // The share sheet needs a fresh tap; a slow da.gd can outlast it.
             // The link is cached now, so the next tap opens the sheet at once.
             if (error.name === "NotAllowedError" && !cached && shortened) this.shareStatus = this.t.shareRetry;
             else if (error.name !== "AbortError") console.error("Share failed:", error);
@@ -897,9 +897,7 @@
           this.loadingMode = "shortlink";
           this.status = this.t.statusResolvingShortLink;
           try {
-            const data = await vgdJsonp("forward.php", { shorturl: code });
-            if (data.errorcode) throw new Error(data.errormessage || `v.gd error ${data.errorcode}`);
-            const target = new URL(data.url || "");
+            const target = new URL(await dagd(`coshorten/${code}`));
             if (target.protocol !== "https:" || target.hostname !== "down.blue") {
               throw new Error("Short link target is not down.blue");
             }
@@ -1899,42 +1897,24 @@
     function videoThumbnailUrl(did, cid) {
       return `https://video.bsky.app/watch/${encodeURIComponent(did)}/${encodeURIComponent(cid)}/thumbnail.jpg`;
     }
-    function parseVGdHash(hash) {
+    function parseShortHash(hash) {
       const match = String(hash || "").match(/^#([A-Za-z0-9_]{4,30})$/);
       return match ? match[1] : null;
     }
-    // v.gd sends no CORS headers, so fetch() can never read its answers; its
-    // API also speaks JSONP (callback=), which a <script> tag can load.
-    function vgdJsonp(endpoint, params, timeoutMs = 8000) {
-      return new Promise((resolve, reject) => {
-        const callback = `vgd${Date.now()}${Math.random().toString(36).slice(2)}`;
-        const script = document.createElement("script");
-        let settled = false;
-        const finish = (error, data) => {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          delete window[callback];
-          script.remove();
-          error ? reject(error) : resolve(data);
-        };
-        const timer = setTimeout(() => finish(new Error("v.gd timed out")), timeoutMs);
-        window[callback] = (data) => finish(null, data);
-        // A plain-text error page loads fine but never calls back.
-        script.onload = () => finish(new Error("v.gd returned no data"));
-        script.onerror = () => finish(new Error("v.gd could not be reached"));
-        const query = new URLSearchParams({ ...params, format: "json", callback });
-        script.src = `https://v.gd/${endpoint}?${query}`;
-        document.head.appendChild(script);
-      });
+    // da.gd answers in plain text and sends CORS headers, so fetch() can
+    // read it. v.gd and is.gd were dropped: their create.php has answered
+    // "Error, database insert failed" for every URL since mid 2026.
+    async function dagd(path) {
+      const res = await fetch(`https://da.gd/${path}`, { signal: AbortSignal.timeout(8000) });
+      const text = (await res.text()).trim();
+      if (!res.ok) throw new Error(`da.gd returned ${res.status}: ${text}`);
+      return text;
     }
-    async function shortenWithVGd(longUrl) {
-      const data = await vgdJsonp("create.php", { url: longUrl });
-      if (data.errorcode) throw new Error(data.errormessage || `v.gd error ${data.errorcode}`);
-      const shortUrl = new URL(data.shorturl || "");
-      if (shortUrl.hostname !== "v.gd") throw new Error("v.gd response used an unexpected host");
+    async function shortenWithDagd(longUrl) {
+      const shortUrl = new URL(await dagd(`s?url=${encodeURIComponent(longUrl)}`));
+      if (shortUrl.hostname !== "da.gd") throw new Error("da.gd response used an unexpected host");
       const match = shortUrl.pathname.match(/^\/([A-Za-z0-9_]{4,30})\/?$/);
-      if (!match) throw new Error("v.gd response missing short code");
+      if (!match) throw new Error("da.gd response missing short code");
       return `https://down.blue/#${match[1]}`;
     }
     // Takes the text or a promise of it (see copyShareLink).
