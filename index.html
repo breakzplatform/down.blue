@@ -323,6 +323,12 @@
 
           <fieldset v-if="downloadReady && downloadLink && downloadName" class="db-choice">
             <legend class="db-choice-title">{{ t.downloadTitle }}</legend>
+            <p class="db-note mb-4">{{ t.downloadStarted }}</p>
+            <button v-if="downloadFile" type="button" @click="shareDownloadFile"
+              class="db-btn db-btn-primary db-btn-mode w-full mb-4 cast press">
+              <span class="db-mode-label">{{ t.shareFile }}</span>
+              <span class="db-micro">{{ t.shareFileSub }}</span>
+            </button>
             <div class="db-download-row">
               <button type="button" @click="backToFormats" class="db-btn db-btn-icon cast press" :aria-label="t.back" :title="t.back">
                 <!-- lucide-static 0.542.0: arrow-left, link, share-2 -->
@@ -523,7 +529,11 @@
         btn720Sub: "smaller · streaming quality",
         btnGif: "Download GIF",
         btnGifMp4: "Download MP4",
-        saveFile: "Save file",
+        saveFile: "Download again",
+        downloadStarted: "Your download has started. If it didn't, download it again below.",
+        shareFile: "Share video",
+        shareFileSub: "send to an app or save to Photos",
+        shareFileFailed: "Could not share the file. Download it instead.",
         subtitlesPrefix: "Download Subtitles",
         gifAlt: "GIF Preview",
         historyTitle: "Download History",
@@ -609,7 +619,11 @@
         btn720Sub: "menor · qualidade de streaming",
         btnGif: "Baixar GIF",
         btnGifMp4: "Baixar MP4",
-        saveFile: "Salvar arquivo",
+        saveFile: "Baixar de novo",
+        downloadStarted: "O download já começou. Se não começou, baixe de novo aqui embaixo.",
+        shareFile: "Compartilhar vídeo",
+        shareFileSub: "envie para um app ou salve na galeria",
+        shareFileFailed: "Não foi possível compartilhar o arquivo. Baixe-o em vez disso.",
         subtitlesPrefix: "Baixar legendas",
         gifAlt: "Pré-visualização do GIF",
         historyTitle: "Histórico de downloads",
@@ -709,6 +723,7 @@
           gifPreviewVisible: false,
           downloadLink: "",
           downloadName: "",
+          downloadFile: null,
           downloadReady: false,
           subtitleLang: "",
           subtitleUrl: "",
@@ -770,7 +785,7 @@
           return typeof navigator.share === "function";
         },
         shareStatusIsError() {
-          return [this.t.shareCopiedLong, this.t.shareSharedLong, this.t.shareCopyFailed].includes(this.shareStatus);
+          return [this.t.shareCopiedLong, this.t.shareSharedLong, this.t.shareCopyFailed, this.t.shareFileFailed].includes(this.shareStatus);
         },
       },
       watch: {
@@ -837,6 +852,7 @@
           this.downloadReady = false;
           this.downloadLink = "";
           this.downloadName = "";
+          this.downloadFile = null;
           this.subtitleLang = "";
           this.subtitleUrl = "";
           this.videoPreviewVisible = false;
@@ -1817,7 +1833,22 @@
         // blob: link, so the same file also stays behind a link the user taps.
         deliverDownload(blob, filename) {
           this.downloadName = filename;
+          const file = new File([blob], filename, { type: blob.type });
+          this.downloadFile = navigator.canShare?.({ files: [file] }) ? markRaw(file) : null;
           triggerDownload(blob, filename);
+        },
+        // Hands the file itself to the system share sheet, so it can go straight
+        // to another app or to the photo library without opening Downloads.
+        async shareDownloadFile() {
+          this.shareStatus = "";
+          try {
+            await navigator.share({ files: [this.downloadFile] });
+          } catch (error) {
+            if (error.name !== "AbortError") {
+              console.error("File share failed:", error);
+              this.shareStatus = this.t.shareFileFailed;
+            }
+          }
         },
         cleanupBlobUrls() {
           for (const k of ["downloadLink", "subtitleUrl"]) {
@@ -1834,6 +1865,7 @@
           this.downloadReady = false;
           this.downloadLink = "";
           this.downloadName = "";
+          this.downloadFile = null;
           this.subtitleLang = "";
           this.subtitleUrl = "";
           this.postCid = "";
