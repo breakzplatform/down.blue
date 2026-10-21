@@ -323,7 +323,7 @@
 
           <fieldset v-if="downloadReady && downloadLink && downloadName" class="db-choice">
             <legend class="db-choice-title">{{ t.downloadTitle }}</legend>
-            <p class="db-note mb-4">{{ t.downloadStarted }}</p>
+            <p class="db-note mb-4">{{ downloadNote }}</p>
             <button v-if="downloadFile" type="button" @click="shareDownloadFile"
               class="db-btn db-btn-primary db-btn-mode w-full mb-4 cast press">
               <span class="db-mode-label">{{ t.shareFile }}</span>
@@ -338,7 +338,7 @@
                 </svg>
               </button>
               <a :href="downloadLink" :download="downloadName" class="db-btn db-btn-mode cast press">
-                <span class="db-mode-label">{{ t.saveFile }}</span>
+                <span class="db-mode-label">{{ isIos ? t.saveFileIos : t.saveFile }}</span>
                 <span class="db-micro db-filename">{{ downloadName }}</span>
               </a>
               <button type="button" @click="copyShareLink" :disabled="shareBusy" class="db-btn db-btn-icon cast press"
@@ -531,6 +531,9 @@
         btnGifMp4: "Download MP4",
         saveFile: "Download again",
         downloadStarted: "Your download has started. If it didn't, download it again below.",
+        downloadReady: "Your video is ready. Tap Download to save it.",
+        downloadReadyShare: "Your video is ready. Tap Share video to save it to Photos or send it to an app.",
+        saveFileIos: "Download",
         shareFile: "Share video",
         shareFileSub: "send to an app or save to Photos",
         shareFileFailed: "Could not share the file. Download it instead.",
@@ -621,6 +624,9 @@
         btnGifMp4: "Baixar MP4",
         saveFile: "Baixar de novo",
         downloadStarted: "O download já começou. Se não começou, baixe de novo aqui embaixo.",
+        downloadReady: "Seu vídeo está pronto. Toque em Baixar para salvar.",
+        downloadReadyShare: "Seu vídeo está pronto. Toque em Compartilhar vídeo para salvar na galeria ou enviar para um app.",
+        saveFileIos: "Baixar",
         shareFile: "Compartilhar vídeo",
         shareFileSub: "envie para um app ou salve na galeria",
         shareFileFailed: "Não foi possível compartilhar o arquivo. Baixe-o em vez disso.",
@@ -698,6 +704,12 @@
       try { return localStorage.getItem("network") === "Atmosphere" ? "Atmosphere" : "Bluesky"; }
       catch { return "Bluesky"; }
     }
+
+    // iOS (every browser there runs WebKit) drops a download started after an
+    // await, so the file is only offered there, never assumed to be on its way.
+    // iPadOS reports itself as a Mac, hence the touch check.
+    const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
     function detectLang() {
       const stored = localStorage.getItem("lang");
@@ -780,6 +792,13 @@
           const source = this.videoSource;
           if (source?.kind !== "bluesky-video" || !source.did || !source.cid) return null;
           return videoThumbnailUrl(source.did, source.cid);
+        },
+        isIos() {
+          return IS_IOS;
+        },
+        downloadNote() {
+          if (!IS_IOS) return this.t.downloadStarted;
+          return this.downloadFile ? this.t.downloadReadyShare : this.t.downloadReady;
         },
         webShareAvailable() {
           return typeof navigator.share === "function";
