@@ -1910,14 +1910,15 @@
       }
       const transmuxer = new muxjs.mp4.Transmuxer({ keepOriginalTimestamps: false });
       const parts = [];
-      let initPushed = false;
+      const trackSpans = new Map();
+      let initSegment = null;
       transmuxer.on("data", (segment) => {
-        if (!initPushed && segment.initSegment) {
-          parts.push(new Blob([segment.initSegment]));
-          initPushed = true;
+        if (!initSegment && segment.initSegment) initSegment = segment.initSegment;
+        if (segment.data) {
+          collectFragmentSpans(segment.data, trackSpans);
+          // Wrapping in a Blob moves the bytes out of the JS heap right away.
+          parts.push(new Blob([segment.data]));
         }
-        // Wrapping in a Blob moves the bytes out of the JS heap right away.
-        if (segment.data) parts.push(new Blob([segment.data]));
       });
       const sizes = segmentSizes && segmentSizes.length ? segmentSizes : [tsBlob.size];
       let offset = 0;
@@ -1927,8 +1928,128 @@
         transmuxer.push(bytes);
         transmuxer.flush();
       }
-      if (!parts.length) throw new Error("mux.js produced no output");
-      return new Blob(parts, { type: "video/mp4" });
+      if (!initSegment || !parts.length) throw new Error("mux.js produced no output");
+      let header = initSegment;
+      try {
+        header = withFragmentDurations(initSegment, trackSpans);
+      } catch (err) {
+        // A wrong header duration only affects players that trust it; never fail the download.
+        console.warn("could not write the MP4 duration:", err);
+      }
+      return new Blob([new Blob([header]), ...parts], { type: "video/mp4" });
+    }
+
+    // mux.js never learns the total duration, so it writes 0xFFFFFFFF into mvhd, tkhd and
+    // mdhd (VLC and WhatsApp show 13:15:21). The real duration of each track is the span its
+    // fragments cover: from the first tfdt to the last tfdt plus that trun's sample durations.
+    function* mp4Boxes(bytes, start, end) {
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      let offset = start;
+      while (offset + 8 <= end) {
+        let size = view.getUint32(offset);
+        const type = String.fromCharCode(...bytes.subarray(offset + 4, offset + 8));
+        let header = 8;
+        if (size === 1) {
+          size = Number(view.getBigUint64(offset + 8));
+          header = 16;
+        } else if (size === 0) {
+          size = end - offset;
+        }
+        if (size < header || offset + size > end) return;
+        yield { type, start: offset, body: offset + header, end: offset + size, view };
+        offset += size;
+      }
+    }
+
+    function childBox(bytes, parent, type) {
+      for (const box of mp4Boxes(bytes, parent.body, parent.end)) if (box.type === type) return box;
+      return null;
+    }
+
+    function collectFragmentSpans(bytes, spans) {
+      for (const moof of mp4Boxes(bytes, 0, bytes.byteLength)) {
+        if (moof.type !== "moof") continue;
+        for (const traf of mp4Boxes(bytes, moof.body, moof.end)) {
+          if (traf.type !== "traf") continue;
+          const tfhd = childBox(bytes, traf, "tfhd");
+          const tfdt = childBox(bytes, traf, "tfdt");
+          if (!tfhd || !tfdt) continue;
+          const view = tfhd.view;
+          const trackId = view.getUint32(tfhd.body + 4);
+          const tfhdFlags = view.getUint32(tfhd.body) & 0xffffff;
+          let field = tfhd.body + 8;
+          if (tfhdFlags & 0x01) field += 8;
+          if (tfhdFlags & 0x02) field += 4;
+          const defaultDuration = tfhdFlags & 0x08 ? view.getUint32(field) : 0;
+          const tfdtVersion = view.getUint8(tfdt.body);
+          const decodeTime = tfdtVersion === 1
+            ? Number(view.getBigUint64(tfdt.body + 4))
+            : view.getUint32(tfdt.body + 4);
+          let duration = 0;
+          for (const trun of mp4Boxes(bytes, traf.body, traf.end)) {
+            if (trun.type !== "trun") continue;
+            const flags = view.getUint32(trun.body) & 0xffffff;
+            const count = view.getUint32(trun.body + 4);
+            let cursor = trun.body + 8;
+            if (flags & 0x01) cursor += 4;
+            if (flags & 0x04) cursor += 4;
+            const sampleFields = [0x100, 0x200, 0x400, 0x800].filter((bit) => flags & bit).length;
+            for (let i = 0; i < count; i++) {
+              duration += flags & 0x100 ? view.getUint32(cursor) : defaultDuration;
+              cursor += sampleFields * 4;
+            }
+          }
+          const span = spans.get(trackId);
+          spans.set(trackId, {
+            start: span ? Math.min(span.start, decodeTime) : decodeTime,
+            end: span ? Math.max(span.end, decodeTime + duration) : decodeTime + duration,
+          });
+        }
+      }
+    }
+
+    // mvhd and mdhd share a layout: timescale then duration, 32-bit (v0) or 64-bit (v1) times.
+    function headerTimescale(box) {
+      return box.view.getUint32(box.body + (box.view.getUint8(box.body) === 1 ? 20 : 12));
+    }
+
+    function writeDuration(box, offsetV0, offsetV1, value) {
+      if (box.view.getUint8(box.body) === 1) {
+        box.view.setBigUint64(box.body + offsetV1, BigInt(value));
+      } else {
+        box.view.setUint32(box.body + offsetV0, Math.min(value, 0xfffffffe));
+      }
+    }
+
+    function withFragmentDurations(initSegment, spans) {
+      const bytes = new Uint8Array(initSegment);
+      const moov = [...mp4Boxes(bytes, 0, bytes.byteLength)].find((box) => box.type === "moov");
+      const mvhd = moov && childBox(bytes, moov, "mvhd");
+      if (!mvhd || !spans.size) return bytes;
+      const movieTimescale = headerTimescale(mvhd);
+      let movieDuration = 0;
+      for (const trak of mp4Boxes(bytes, moov.body, moov.end)) {
+        if (trak.type !== "trak") continue;
+        const tkhd = childBox(bytes, trak, "tkhd");
+        const mdia = childBox(bytes, trak, "mdia");
+        const mdhd = mdia && childBox(bytes, mdia, "mdhd");
+        if (!tkhd || !mdhd) continue;
+        const trackId = tkhd.view.getUint32(tkhd.body + (tkhd.view.getUint8(tkhd.body) === 1 ? 20 : 12));
+        const span = spans.get(trackId);
+        if (!span) continue;
+        // mdhd counts the samples; tkhd and mvhd count presentation time, and without an edit
+        // list a track that starts late (audio priming) still ends at its last decode time.
+        const mediaDuration = span.end - span.start;
+        const trackDuration = Math.round((span.end * movieTimescale) / headerTimescale(mdhd));
+        writeDuration(mdhd, 16, 24, mediaDuration);
+        writeDuration(tkhd, 20, 28, trackDuration);
+        movieDuration = Math.max(movieDuration, trackDuration);
+      }
+      writeDuration(mvhd, 16, 24, movieDuration);
+      const mvex = childBox(bytes, moov, "mvex");
+      const mehd = mvex && childBox(bytes, mvex, "mehd");
+      if (mehd) writeDuration(mehd, 4, 4, movieDuration);
+      return bytes;
     }
 
     function extensionFromMime(mime) {
