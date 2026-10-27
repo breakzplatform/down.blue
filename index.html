@@ -508,6 +508,7 @@
         shareCopiedLong: "Couldn't shorten the link, so the full link was copied.",
         shareSharedLong: "Couldn't shorten the link, so the full link was shared.",
         shareRetry: "Short link ready. Tap share again.",
+        shareRetryLong: "Couldn't shorten the link. Tap share again to share the full link.",
         shareCopyFailed: "Could not copy the link.",
         statusResolvingShortLink: "Opening short link...",
         errShortLink: "Could not open this short link.",
@@ -608,6 +609,7 @@
         shareCopiedLong: "Não deu para encurtar o link, então o link completo foi copiado.",
         shareSharedLong: "Não deu para encurtar o link, então o link completo foi compartilhado.",
         shareRetry: "Link curto pronto. Toque em compartilhar de novo.",
+        shareRetryLong: "Não deu para encurtar o link. Toque em compartilhar de novo para enviar o link completo.",
         shareCopyFailed: "Não foi possível copiar o link.",
         statusResolvingShortLink: "Abrindo link curto...",
         errShortLink: "Não foi possível abrir este link curto.",
@@ -708,6 +710,7 @@
           shareShortUrl: "",
           shareShortUrlFor: "",
           sharePostUrl: "",
+          shareFallbackFor: "",
           pdsCache: {},
           thumbnailErrors: {},
         };
@@ -765,7 +768,7 @@
           return this.shareStatusKey ? this.t[this.shareStatusKey] : "";
         },
         shareStatusIsError() {
-          return ["shareCopiedLong", "shareSharedLong", "shareCopyFailed", "shareFileFailed"].includes(this.shareStatusKey);
+          return ["shareCopiedLong", "shareSharedLong", "shareRetryLong", "shareCopyFailed", "shareFileFailed"].includes(this.shareStatusKey);
         },
       },
       watch: {
@@ -852,6 +855,7 @@
         async prepareShareUrl() {
           const longUrl = this.downloadShareUrl();
           if (this.shareShortUrlFor === longUrl && this.shareShortUrl) return { url: this.shareShortUrl, shortened: true };
+          if (this.shareFallbackFor === longUrl) return { url: longUrl, shortened: false };
           this.shareBusy = true;
           try {
             const shortUrl = await shortenWithDagd(longUrl);
@@ -881,16 +885,19 @@
         },
         async shareDownloadLink() {
           this.shareStatusKey = "";
-          const cached = this.shareShortUrlFor === this.downloadShareUrl() && this.shareShortUrl;
+          const longUrl = this.downloadShareUrl();
+          const cached = (this.shareShortUrlFor === longUrl && this.shareShortUrl) || this.shareFallbackFor === longUrl;
           const { url, shortened } = await this.prepareShareUrl();
           try {
             await navigator.share({ title: "down.blue", url });
             if (!shortened) this.shareStatusKey = "shareSharedLong";
           } catch (error) {
             // The share sheet needs a fresh tap; a slow da.gd can outlast it.
-            // The link is cached now, so the next tap opens the sheet at once.
-            if (error.name === "NotAllowedError" && !cached && shortened) this.shareStatusKey = "shareRetry";
-            else if (error.name !== "AbortError") console.error("Share failed:", error);
+            // The link is remembered now, so the next tap opens the sheet at once.
+            if (error.name === "NotAllowedError" && !cached) {
+              if (!shortened) this.shareFallbackFor = longUrl;
+              this.shareStatusKey = shortened ? "shareRetry" : "shareRetryLong";
+            } else if (error.name !== "AbortError") console.error("Share failed:", error);
           }
         },
         async resolveShortHash(code) {
@@ -1864,6 +1871,7 @@
           this.shareShortUrl = "";
           this.shareShortUrlFor = "";
           this.sharePostUrl = "";
+          this.shareFallbackFor = "";
         },
       },
     }).mount("#app");

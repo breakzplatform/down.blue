@@ -46,6 +46,7 @@ function loadPage({ href = "https://down.blue/" } = {}) {
     URL,
     URLSearchParams,
     AbortController,
+    AbortSignal,
     setTimeout,
     clearTimeout,
     TextEncoder,
