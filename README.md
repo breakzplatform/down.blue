@@ -90,6 +90,10 @@ There are three themes: light (the default), dark and terminal (amber on black).
 
 Edit `scripts/og.html`, `scripts/banner.html`, `scripts/avatar.svg` or `scripts/favicon.svg`, then run `./scripts/build-social.sh` or `./scripts/build-icons.sh`. The banner and avatar are for the @down.blue profile and are not deployed. Both need Chrome installed. The favicon is inlined in `index.html` by hand.
 
+### Page titles
+
+Every page's `<title>`, `og:title` and `twitter:title` read `<page description> • <domain>` (U+2022 with one space on each side), with the description in the page's language: `Video Downloader for Bluesky • down.blue`.
+
 ## Known limitations
 
 Long videos are the weak spot. Bluesky allows up to ten minutes, and single-threaded ffmpeg keeps the whole input and output in memory, so a long video can be slow or fail on a phone.

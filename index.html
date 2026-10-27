@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin" />
   <meta http-equiv="Cross-Origin-Embedder-Policy" content="credentialless" />
-  <title>Video Downloader for Bluesky</title>
-  <meta property="og:title" content="Video Downloader for Bluesky" />
-  <meta name="twitter:title" content="Video Downloader for Bluesky" />
+  <title>Video Downloader for Bluesky • down.blue</title>
+  <meta property="og:title" content="Video Downloader for Bluesky • down.blue" />
+  <meta name="twitter:title" content="Video Downloader for Bluesky • down.blue" />
   <meta name="description" content="Download (and convert!) Bluesky videos with ease!" />
   <meta property="og:description" content="Download (and convert!) Bluesky videos with ease!" />
   <meta name="twitter:description" content="Download (and convert!) Bluesky videos with ease!" />
@@ -504,6 +504,7 @@
 
     const STRINGS = {
       en: {
+        pageTitle: "Video Downloader for Bluesky • down.blue",
         tagline: "Work in Progress. Expect bugs",
         foundBug: "found one?",
         bugFormUrl: "https://q.joseli.to/forms/notx-blue-bugs",
@@ -597,6 +598,7 @@
         errConvert: "Conversion failed.",
       },
       pt: {
+        pageTitle: "Baixe vídeos do Bluesky • down.blue",
         tagline: "Em desenvolvimento. Bugs acontecem",
         foundBug: "achou um?",
         bugFormUrl: "https://q.joseli.to/forms/notx-blue-bugs-pt",
@@ -808,6 +810,7 @@
         },
       },
       watch: {
+        lang: { handler() { document.title = this.t.pageTitle; }, immediate: true },
         historyQuery() { this.historyPage = 1; },
       },
       mounted() {
