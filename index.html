@@ -704,7 +704,7 @@
           videoSource: null,
           loadingMode: null,
           shareBusy: false,
-          shareStatus: "",
+          shareStatusKey: "",
           shareShortUrl: "",
           shareShortUrlFor: "",
           sharePostUrl: "",
@@ -760,8 +760,12 @@
         webShareAvailable() {
           return typeof navigator.share === "function";
         },
+        // A key, not the text, so the line follows a language switch.
+        shareStatus() {
+          return this.shareStatusKey ? this.t[this.shareStatusKey] : "";
+        },
         shareStatusIsError() {
-          return [this.t.shareCopiedLong, this.t.shareSharedLong, this.t.shareCopyFailed, this.t.shareFileFailed].includes(this.shareStatus);
+          return ["shareCopiedLong", "shareSharedLong", "shareCopyFailed", "shareFileFailed"].includes(this.shareStatusKey);
         },
       },
       watch: {
@@ -838,7 +842,7 @@
           this.videoPreviewVisible = false;
           this.gifPreviewVisible = false;
           this.status = "";
-          this.shareStatus = "";
+          this.shareStatusKey = "";
         },
         downloadShareUrl() {
           return `https://down.blue/?url=${encodeURIComponent(this.sharePostUrl)}`;
@@ -862,30 +866,30 @@
           }
         },
         async copyShareLink() {
-          this.shareStatus = "";
+          this.shareStatusKey = "";
           // Safari drops clipboard writes made after an await, so the write
           // starts inside the tap and is handed the link once it exists.
           const prepared = this.prepareShareUrl();
           try {
             await copyText(prepared.then(({ url }) => url));
             const { shortened } = await prepared;
-            this.shareStatus = shortened ? this.t.shareCopied : this.t.shareCopiedLong;
+            this.shareStatusKey = shortened ? "shareCopied" : "shareCopiedLong";
           } catch (error) {
             console.error("Copy failed:", error);
-            this.shareStatus = this.t.shareCopyFailed;
+            this.shareStatusKey = "shareCopyFailed";
           }
         },
         async shareDownloadLink() {
-          this.shareStatus = "";
+          this.shareStatusKey = "";
           const cached = this.shareShortUrlFor === this.downloadShareUrl() && this.shareShortUrl;
           const { url, shortened } = await this.prepareShareUrl();
           try {
             await navigator.share({ title: "down.blue", url });
-            if (!shortened) this.shareStatus = this.t.shareSharedLong;
+            if (!shortened) this.shareStatusKey = "shareSharedLong";
           } catch (error) {
             // The share sheet needs a fresh tap; a slow da.gd can outlast it.
             // The link is cached now, so the next tap opens the sheet at once.
-            if (error.name === "NotAllowedError" && !cached && shortened) this.shareStatus = this.t.shareRetry;
+            if (error.name === "NotAllowedError" && !cached && shortened) this.shareStatusKey = "shareRetry";
             else if (error.name !== "AbortError") console.error("Share failed:", error);
           }
         },
@@ -1826,13 +1830,13 @@
         // Hands the file itself to the system share sheet, so it can go straight
         // to another app or to the photo library without opening Downloads.
         async shareDownloadFile() {
-          this.shareStatus = "";
+          this.shareStatusKey = "";
           try {
             await navigator.share({ files: [this.downloadFile] });
           } catch (error) {
             if (error.name !== "AbortError") {
               console.error("File share failed:", error);
-              this.shareStatus = this.t.shareFileFailed;
+              this.shareStatusKey = "shareFileFailed";
             }
           }
         },
@@ -1856,7 +1860,7 @@
           this.subtitleUrl = "";
           this.postCid = "";
           this.videoSource = null;
-          this.shareStatus = "";
+          this.shareStatusKey = "";
           this.shareShortUrl = "";
           this.shareShortUrlFor = "";
           this.sharePostUrl = "";
