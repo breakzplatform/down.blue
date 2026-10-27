@@ -893,6 +893,9 @@
             if (target.protocol !== "https:" || target.hostname !== "down.blue") {
               throw new Error("Short link target is not down.blue");
             }
+            // A target with a fragment can be a same-document navigation: no
+            // reload, so the page would stay locked on "Opening short link...".
+            if (target.hash) throw new Error("Short link target has a fragment");
             location.replace(target.toString());
           } catch (error) {
             console.error("Short link resolve failed:", error);

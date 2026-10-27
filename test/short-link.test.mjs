@@ -145,6 +145,7 @@ describe("resolveShortHash", () => {
     ["a look-alike host", "https://down.blue.evil.example/", 200],
     ["plain http", "http://down.blue/", 200],
     ["a non-url answer", "no such code", 200],
+    ["a target with a fragment", "https://down.blue/#Zz99", 200],
     ["a 404", "not found", 404],
   ]) {
     test(`refuses ${label} and shows the error`, async () => {
