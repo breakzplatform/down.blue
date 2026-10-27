@@ -1820,14 +1820,14 @@
           const res = await fetch(url, signal ? { signal } : undefined);
           this.throwIfStale(opId);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const contentType = res.headers.get("content-type") || "";
+          const contentType = mediaTypeOrOctetStream(res.headers.get("content-type"));
           const totalHeader = res.headers.get("content-length");
           const total = totalHeader ? parseInt(totalHeader) : 0;
           if (!res.body || !total) {
             const blob = await res.blob();
             this.throwIfStale(opId);
             this.progress = progressStart + progressSpan;
-            return contentType ? new Blob([blob], { type: contentType }) : blob;
+            return new Blob([blob], { type: contentType });
           }
           const reader = res.body.getReader();
           const chunks = [];
@@ -2065,6 +2065,11 @@
         "image/gif": "gif",
       };
       return map[m] || null;
+    }
+    // The PDS or GIF host picks the Content-Type, and a blob: URL renders with
+    // it on this origin. Only media types are kept, so text/html cannot run here.
+    function mediaTypeOrOctetStream(contentType) {
+      return extensionFromMime(contentType) ? contentType : "application/octet-stream";
     }
     function videoThumbnailUrl(did, cid) {
       return `https://video.bsky.app/watch/${encodeURIComponent(did)}/${encodeURIComponent(cid)}/thumbnail.jpg`;
