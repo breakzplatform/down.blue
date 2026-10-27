@@ -25,7 +25,7 @@ function createComponent(fetch, extra = {}) {
     ["downloadShareUrl", "prepareShareUrl", "resolveShortHash"],
     helpers,
     {
-      postUrl: "https://bsky.app/profile/a.bsky.social/post/3abc",
+      sharePostUrl: "https://bsky.app/profile/a.bsky.social/post/3abc",
       t: strings,
       shareBusy: false,
       shareShortUrl: "",
@@ -58,6 +58,12 @@ describe("downloadShareUrl", () => {
       component.downloadShareUrl(),
       "https://down.blue/?url=https%3A%2F%2Fbsky.app%2Fprofile%2Fa.bsky.social%2Fpost%2F3abc",
     );
+  });
+
+  test("ignores later edits to the url box", () => {
+    const component = createComponent(async () => { throw new Error("no network"); });
+    component.postUrl = "https://bsky.app/profile/b.bsky.social/post/9zzz";
+    assert.match(component.downloadShareUrl(), /a\.bsky\.social/);
   });
 });
 

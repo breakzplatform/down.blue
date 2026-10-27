@@ -707,6 +707,7 @@
           shareStatus: "",
           shareShortUrl: "",
           shareShortUrlFor: "",
+          sharePostUrl: "",
           pdsCache: {},
           thumbnailErrors: {},
         };
@@ -840,7 +841,7 @@
           this.shareStatus = "";
         },
         downloadShareUrl() {
-          return `https://down.blue/?url=${encodeURIComponent(this.postUrl)}`;
+          return `https://down.blue/?url=${encodeURIComponent(this.sharePostUrl)}`;
         },
         // Resolves to the short link, or to the full one when da.gd fails; the
         // status line says which, so a full link is never passed off as short.
@@ -1293,6 +1294,9 @@
             return;
           }
           this.postUrl = parsed.url;
+          // The input stays editable after a download; share links follow the
+          // post that was loaded, not whatever is typed there later.
+          this.sharePostUrl = parsed.url;
           const { profile, post, fromAtmosphere } = parsed;
           const op = this.beginOperation();
           this.loadingMode = "find";
@@ -1855,6 +1859,7 @@
           this.shareStatus = "";
           this.shareShortUrl = "";
           this.shareShortUrlFor = "";
+          this.sharePostUrl = "";
         },
       },
     }).mount("#app");
