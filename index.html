@@ -769,8 +769,6 @@
       },
       mounted() {
         document.documentElement.lang = this.lang === "pt" ? "pt-BR" : "en";
-        const shortCode = parseShortHash(location.hash);
-        if (shortCode) this.resolveShortHash(shortCode);
         this.loadHistory();
         this.backfillHistoryThumbnails();
 
@@ -789,9 +787,14 @@
         const url = ["url", "text", "title"]
           .map((name) => urlParams.get(name)?.match(/https?:\/\/\S+/)?.[0])
           .find(Boolean);
+        // A shared post wins over a short hash: resolving the hash takes the
+        // loading lock, and findVideo would then return without a word.
+        const shortCode = parseShortHash(location.hash);
         if (url) {
           this.postUrl = url;
           this.findVideo();
+        } else if (shortCode) {
+          this.resolveShortHash(shortCode);
         }
       },
       beforeUnmount() { this.cleanupBlobUrls(); },

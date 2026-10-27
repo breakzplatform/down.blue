@@ -58,7 +58,7 @@ function loadPage({ href = "https://down.blue/" } = {}) {
       documentElement: { lang: "en", getAttribute: () => null, setAttribute() {} },
     },
     fetch: async () => { throw new Error("fetch not stubbed"); },
-    FFmpegWASM: { FFmpeg: class FFmpeg {} },
+    FFmpegWASM: { FFmpeg: class FFmpeg { on() {} } },
     Vue: {
       markRaw: (value) => value,
       createApp(opts) {
