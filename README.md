@@ -123,7 +123,8 @@ Issues and pull requests are welcome. Please test in a browser before sending a 
 
 ## Support
 
-[Buy Me a Coffee](https://buymeacoffee.com/joselito)
+- [Mercado Pago](https://link.mercadopago.com.br/breakzplatform)
+- [Buy Me a Coffee](https://buymeacoffee.com/joselito)
 
 ## Notice
 
