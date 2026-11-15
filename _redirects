@@ -4,3 +4,10 @@
 # Short links for the browser extension's store pages.
 /chrome  https://chromewebstore.google.com/detail/kaeldbibaahmchelnjnjjhlgafbbbllj  302
 /firefox  https://addons.mozilla.org/firefox/addon/down-blue/  302
+
+# The privacy policy is shared by every notx.blue app, so this site has none
+# of its own; the extension's old policy page moved there too.
+/privacy  https://notx.blue/privacy  301!
+/privacy.html  https://notx.blue/privacy  301!
+/extension/privacy  https://notx.blue/privacy  301!
+/extension/privacy/*  https://notx.blue/privacy  301!
