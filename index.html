@@ -384,6 +384,21 @@
         </div>
       </section>
 
+      <aside class="db-callout db-callout-promo cast mb-6" v-if="urlHistory.length > 0">
+        <!-- lucide-static 0.542.0, ghost.svg. The label survives as aria-label. -->
+        <span class="db-callout-spine" role="img" :aria-label="t.sumidosLabel" :title="t.sumidosLabel">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+            <path d="M9 10h.01" /><path d="M15 10h.01" />
+            <path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z" />
+          </svg>
+        </span>
+        <div class="db-callout-body">
+          {{ t.sumidosPrefix }} <a :href="t.sumidosUrl" target="_blank" rel="noopener">{{ t.sumidosName }}</a>
+          {{ t.sumidosText }}
+        </div>
+      </aside>
+
       <!-- History -->
       <section class="db-panel cast mb-6" v-if="urlHistory.length > 0">
         <h2 class="db-panel-head">
@@ -552,6 +567,11 @@
         reopen: "Re-open",
         removeHistory: "Remove from history",
         didYouKnow: "Did you know?",
+        sumidosLabel: "New on notx.blue",
+        sumidosPrefix: "New on notx.blue:",
+        sumidosName: "crickets.notx.blue",
+        sumidosUrl: "https://crickets.notx.blue",
+        sumidosText: "shows who you follow on Bluesky that stopped posting, and unfollows them in bulk.",
         mentionPrefix: "Mention",
         mentionMiddle: "in a reply to a video post and the bot answers with a download link. On iPhone there's also an",
         iosShortcut: "iOS Shortcut",
@@ -647,6 +667,11 @@
         reopen: "Reabrir",
         removeHistory: "Remover do histórico",
         didYouKnow: "Você sabia?",
+        sumidosLabel: "Novo no notx.blue",
+        sumidosPrefix: "Novo no notx.blue:",
+        sumidosName: "sumidos.notx.blue",
+        sumidosUrl: "https://sumidos.notx.blue",
+        sumidosText: "mostra quem você segue no Bluesky e parou de postar, e deixa de seguir em lote.",
         mentionPrefix: "Mencione",
         mentionMiddle: "numa resposta a um post de vídeo e o bot responde com o link de download. No iPhone, também tem um",
         iosShortcut: "atalho do iOS",
