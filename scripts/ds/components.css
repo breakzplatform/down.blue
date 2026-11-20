@@ -74,6 +74,10 @@
   --ink: var(--ink-sponsors);
   --on-ink: var(--on-sponsors);
 }
+.ink-mercadopago {
+  --ink: var(--ink-mercadopago);
+  --on-ink: var(--on-mercadopago);
+}
 .ink-spot {
   --ink: var(--spot);
   --on-ink: var(--on-spot);
@@ -103,7 +107,7 @@
   border: var(--border);
   background: var(--surface-page);
   color: var(--text-1);
-  font: var(--weight-bold) 13.5px/1.2 var(--font-body);
+  font: var(--weight-bold) 13.5px/1.25 var(--font-body);
   text-align: center;
   text-decoration: none;
   cursor: pointer;
@@ -326,8 +330,10 @@ a.wordmark:active {
   border: 0;
   background: transparent;
   color: var(--text-1);
-  padding: 8px 10px;
-  font: var(--weight-normal) 15px/1.4 var(--font-body);
+  /* The touch target sets the height: CMU's tall ascent would size the box from the font. */
+  height: var(--target);
+  padding: 0 10px;
+  font: var(--type-compact);
 }
 .field input::placeholder {
   color: var(--text-3);
@@ -340,6 +346,25 @@ a.wordmark:active {
 .field :disabled {
   color: var(--text-2);
   cursor: not-allowed;
+}
+/* A standalone <select> with a square chevron drawn in the text colour, so it
+   follows the theme. Inside a .field use the plain select instead. */
+.select-box {
+  appearance: none;
+  font: var(--type-compact);
+  color: var(--text-1);
+  border: var(--border);
+  border-radius: 0;
+  padding: 6px 32px 6px 10px;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--text-1) 50%) calc(100% - 16px) 55% / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--text-1) 50%, transparent 50%) calc(100% - 10px) 55% / 6px 6px no-repeat,
+    var(--surface-page);
+  cursor: pointer;
+}
+.select-box:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 .hint {
   display: block;
@@ -440,7 +465,7 @@ a.wordmark:active {
   background: var(--surface-card);
 }
 .panel {
-  margin: 0 0 16px;
+  margin: 0 0 24px;
 }
 .panel-h {
   margin: 0;
@@ -457,7 +482,7 @@ a.wordmark:active {
   color: var(--text-inverse);
 }
 .panel-b {
-  padding: 12px;
+  padding: 16px;
   font: var(--weight-normal) 15px/1.5 var(--font-body);
 }
 .panel-b p {

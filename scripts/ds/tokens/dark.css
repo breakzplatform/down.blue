@@ -60,6 +60,8 @@
   --on-pix: #FFFFFF;
   --ink-sponsors: #C3859C;
   --on-sponsors: #000000;
+  --ink-mercadopago: #00B1EA;
+  --on-mercadopago: #000000;
 
   /* the sixteen inks */
   --ink-blue: #5B85E6;

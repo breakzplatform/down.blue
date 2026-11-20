@@ -41,6 +41,10 @@
 --tracking-micro:0.11em;
 
 /* composed roles */
+/* a single-purpose tool's masthead: the wordmark is the only display type, so
+   it may pass the top of the scale (see readme, Wordmark) */
+--text-wordmark-hero:clamp(var(--text-display-1),13vw,116px);
+--wordmark-suffix-scale:0.66;
 --type-wordmark:var(--weight-display) 34px/1.05 var(--font-display);
 --type-display:var(--weight-display) var(--text-display-2)/var(--leading-display) var(--font-display);
 --type-rank:var(--weight-display) var(--text-display-4)/1 var(--font-display);

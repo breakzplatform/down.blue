@@ -1,0 +1,54 @@
+/* ---------------------------------------------------------------------------
+   joseli.to — generic components as Tailwind v4 utilities.
+
+   The `@utility` twins of pieces in ../components.css, for Tailwind projects
+   that do not load the class stylesheet. A custom utility is only emitted when
+   a class in the scanned sources uses it, so importing this file costs nothing
+   until a page asks for a piece. Values stay identical to components.css: when
+   one changes, change both.
+
+     select-box     a standalone <select> with a theme-aware chevron
+     theme-switch   the light/dark/terminal cycle button
+
+   Import after ./theme.css.
+   --------------------------------------------------------------------------- */
+
+/* A standalone <select> with a square chevron drawn in the text colour, so it
+   follows the theme. */
+@utility select-box {
+  appearance: none;
+  font: var(--type-compact);
+  color: var(--text-1);
+  border: var(--border);
+  border-radius: 0;
+  padding: 6px 32px 6px 10px;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--text-1) 50%) calc(100% - 16px) 55% / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--text-1) 50%, transparent 50%) calc(100% - 10px) 55% / 6px 6px no-repeat,
+    var(--surface-page);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* The theme control: one button that cycles light -> dark -> terminal and,
+   like the language toggle, names the destination. Icon and label show the
+   NEXT theme (data-next-theme, set by the page); before the script runs the
+   attribute is missing and the light page's next step, dark, is shown. */
+@utility theme-switch {
+  justify-self: start;
+  align-self: start;
+
+  & .icon {
+    display: none;
+  }
+  &:not([data-next-theme]) .icon-moon,
+  &[data-next-theme="dark"] .icon-moon,
+  &[data-next-theme="light"] .icon-sun,
+  &[data-next-theme="terminal"] .icon-terminal {
+    display: inline-block;
+  }
+}

@@ -49,10 +49,9 @@ fi
 rm -rf "${WORK}"
 mkdir -p "${WORK}"
 cp -R "${SCRIPT_DIR}/ds" "${WORK}/ds"
-cp "${SCRIPT_DIR}/tailwind-theme.css" "${WORK}/tailwind-theme.css"
 
-# The entry is compiled from .build/, so @source must become absolute.
-sed "s#@source \"../index.html\";#@source \"${ROOT_DIR}/index.html\";#" \
+# The entry is compiled from .build/, so every @source must become absolute.
+sed "s#@source \"\.\./#@source \"${ROOT_DIR}/#" \
   "${SCRIPT_DIR}/tailwind-input.css" > "${WORK}/input.css"
 
 mkdir -p "$(dirname "${OUTPUT}")"

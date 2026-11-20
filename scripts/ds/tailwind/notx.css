@@ -1,0 +1,262 @@
+/* ---------------------------------------------------------------------------
+   notx.blue — the family layer, as Tailwind v4 utilities.
+
+   notx.blue is a subset of joseli.to, not a sibling system: this file only
+   arranges what the tokens already define (plus Tailwind's own --spacing, kept
+   at the default 0.25rem). It is the shell every notx app repeats, measured on
+   espelho.notx.blue, links.notx.blue and sumidos.notx.blue:
+
+     page column      notx-page
+     wordmark         notx-wordmark, notx-wordmark-suffix (stacks under 560px)
+     panel rhythm     notx-panel (with .cast), notx-panel-head; body is `p-4`
+     controls         notx-btn (+ -primary, -danger, -sm), notx-field, notx-input
+     footer           notx-footer, notx-foot, notx-meta, notx-note, notx-chip
+     FAQ              notx-faq, notx-faq-item
+
+   Family spacing: 60px from the wordmark to the first panel, 24px between
+   panels, 16px inside a panel, 24px between footer rows.
+
+   Every piece is an `@utility`, so Tailwind emits only the ones a page uses.
+   Import after ./theme.css and ./components.css (see readme, notx.blue).
+
+   Three knowingly different from components.css (see readme): the panel
+   rhythm (.panel is 16px apart with 12px .panel-b), the button line height
+   (1.25 here, 1.2 in .btn) and the input (44px tall, --type-compact).
+   --------------------------------------------------------------------------- */
+
+@utility notx-page {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 0 var(--page-pad-x) var(--space-12);
+}
+
+/* The name sits in an .ink-block; the suffix follows it, smaller, and drops
+   under the name on phones. */
+@utility notx-wordmark {
+  margin: var(--space-10) 0 var(--space-6);
+  font: var(--weight-display) var(--text-wordmark-hero) / 1.1 var(--font-display);
+  letter-spacing: var(--tracking-display);
+  color: var(--text-1);
+  text-align: center;
+  white-space: nowrap;
+
+  & a,
+  & a:visited,
+  & a:hover {
+    color: inherit;
+    background: transparent;
+    text-decoration: none;
+  }
+  & a:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 4px;
+  }
+  @media (max-width: 559px) {
+    white-space: normal;
+  }
+}
+@utility notx-wordmark-suffix {
+  font-size: calc(var(--wordmark-suffix-scale) * 1em);
+  letter-spacing: var(--tracking-display);
+
+  @media (max-width: 559px) {
+    display: block;
+  }
+}
+
+/* ---------------------------------------------------------------- panels */
+
+/* A panel is `cast notx-panel`: the block comes from tokens/neo.css. */
+@utility notx-panel {
+  margin: 0 0 --spacing(6);
+
+  main > &:first-child {
+    margin-top: --spacing(15);
+  }
+}
+@utility notx-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--box-head-pad);
+  border-bottom: var(--border);
+  background: var(--project-ink);
+  color: var(--project-ink-contrast);
+  font: var(--weight-bold) var(--text-caption) / 1.3 var(--font-mono);
+  letter-spacing: var(--tracking-meta);
+  text-transform: uppercase;
+
+  & > :first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* ---------------------------------------------------------------- controls */
+
+@utility notx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  background: var(--surface-page);
+  color: var(--text-1);
+  font: var(--weight-bold) var(--text-body-sm) / 1.25 var(--font-body);
+  padding: --spacing(2) --spacing(3);
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+
+  /* Disabled: a sunken fill and the second text colour, never an opacity fade. */
+  &:disabled {
+    background: var(--surface-sunken);
+    border-color: var(--border-strong);
+    color: var(--text-2);
+    cursor: not-allowed;
+  }
+}
+@utility notx-btn-primary {
+  background: var(--project-ink);
+  border-color: var(--project-ink);
+  color: var(--project-ink-contrast);
+}
+@utility notx-btn-danger {
+  background: var(--ink-red);
+  border-color: var(--ink-red);
+  color: var(--on-red);
+}
+@utility notx-btn-sm {
+  padding: --spacing(1) --spacing(1.75);
+  font-size: var(--text-meta);
+}
+
+/* An <input> cannot carry the halftone's pseudo-elements, so the box is a
+   wrapper and focus shows on it. */
+@utility notx-field {
+  display: flex;
+  min-width: 0;
+  background: var(--surface-page);
+  border: var(--border);
+
+  &:focus-within {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+}
+@utility notx-input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  background: transparent;
+  color: var(--text-1);
+  font: var(--type-compact);
+  /* CMU's tall ascent would size the box from the font, not line-height. */
+  height: var(--target);
+  padding: 0 --spacing(2.5);
+
+  &:focus {
+    outline: none;
+  }
+  &::placeholder {
+    color: var(--text-3);
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------- footer */
+
+@utility notx-footer {
+  padding-top: --spacing(6);
+
+  & > *,
+  & > .notx-note {
+    margin: 0 0 --spacing(6);
+  }
+}
+/* One line of the footer: items joined by a middle dot, each kept whole. */
+@utility notx-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1) 0;
+
+  & > span {
+    white-space: nowrap;
+  }
+  & > span:not(:last-child)::after {
+    content: ' ·';
+    color: var(--text-3);
+    padding-right: 0.4em;
+  }
+}
+@utility notx-meta {
+  font: var(--type-meta);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-meta);
+  color: var(--text-3);
+}
+@utility notx-note {
+  font: var(--type-code);
+  color: var(--text-3);
+  margin: 0;
+}
+/* A support chip: `notx-chip cast press bg-ink-pix text-on-pix`. */
+@utility notx-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: --spacing(1.25) --spacing(2.25);
+  font: var(--type-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-meta);
+  text-decoration: none;
+}
+
+/* ---------------------------------------------------------------- faq */
+
+/* A list of <details class="notx-faq-item"><summary>…</summary><p>…</p>. */
+@utility notx-faq {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+@utility notx-faq-item {
+  border-bottom: var(--border-dot);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+  & summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: var(--target);
+    padding: var(--space-4) var(--space-6);
+    font: var(--weight-bold) var(--text-body-sm) / 1.35 var(--font-body);
+    cursor: pointer;
+    list-style: none;
+  }
+  & summary::-webkit-details-marker {
+    display: none;
+  }
+  & summary::after {
+    content: '+';
+    font-family: var(--font-mono);
+    flex: none;
+  }
+  &[open] summary::after {
+    content: '−';
+  }
+  &[open] summary {
+    color: var(--project-ink);
+  }
+  & p {
+    margin: 0;
+    padding: 0 var(--space-6) var(--space-5);
+    color: var(--text-2);
+    font: var(--type-dek);
+  }
+}

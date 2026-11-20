@@ -41,6 +41,12 @@
    box-shadow cannot express, so there are no `shadow-*` utilities. Add the
    `cast` / `press` / `lift` classes in markup instead.
 
+   The block is `inline reference`: Tailwind writes no `--color-*`, `--text-*`
+   ... variables to :root, and every utility points straight at the DS variable
+   (`text-text-2` is `color: var(--text-2)`). The mappings below are only names,
+   so nothing ships for a utility nobody uses, and the self-references
+   (`--font-display: var(--font-display)`) never reach the page.
+
    Utilities are theme-aware for free: every `--color-*` entry points at a DS
    variable that `dark.css` redefines, so `bg-surface-card` and `text-text-1`
    follow the moment `data-theme="dark"` or `data-theme="terminal"` lands on
@@ -49,7 +55,7 @@
    prefers-color-scheme.
    --------------------------------------------------------------------------- */
 
-@theme static {
+@theme inline reference {
   --color-*: initial;
   --radius-*: initial;
   --shadow-*: initial;
@@ -91,6 +97,7 @@
   --color-ink-down: var(--ink-down);          --color-on-down: var(--on-down);
   --color-ink-pix: var(--ink-pix);            --color-on-pix: var(--on-pix);
   --color-ink-sponsors: var(--ink-sponsors);  --color-on-sponsors: var(--on-sponsors);
+  --color-ink-mercadopago: var(--ink-mercadopago); --color-on-mercadopago: var(--on-mercadopago);
 
   /* the sixteen inks and their legible partners */
   --color-ink-blue: var(--ink-blue);          --color-on-blue: var(--on-blue);

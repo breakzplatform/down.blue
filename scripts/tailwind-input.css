@@ -1,17 +1,21 @@
 /* Tailwind v4 entry point for down.blue. Compiled by scripts/build-css.sh into
-   assets/tailwind-<version>.css — the only stylesheet index.html links.
+   assets/tailwind-<version>.css, the only stylesheet index.html links.
 
    scripts/ds/ is a verbatim copy of the joseli.to design system (skill
-   `joseli-to-ds`): never edit it here, replace the directory. The token files
-   are imported individually rather than through ds/styles.css so Tailwind's
-   bundler inlines them; base.css comes last because it has to win over
-   Tailwind's preflight. */
-/* source(none) turns off v4's automatic source detection. Without it Tailwind
-   scans the entry file's directory and treats the CSS itself as content: the
-   vendored tokens, and the previous build's output. It then extracts "classes"
-   from inside them, which made the output grow on every build. The @source
-   below is the only source of truth. */
-@import "tailwindcss" source(none);
+   `joseli-to-ds`, esquilos 9eea5dc): never edit it here, replace the
+   directory. The order is the DS readme's "notx.blue com Tailwind v4" recipe,
+   the same as sumidos.notx.blue and notx.blue: no preflight, because
+   tokens/base.css is already the reset; base.css in the base layer and neo.css
+   (.cast, .press) in components, so any utility in the markup wins over them;
+   then the family layer, tailwind/notx.css.
+
+   source(none) turns off v4's automatic source detection: it would scan this
+   directory and extract "classes" from the vendored CSS itself, which made the
+   output grow on every build. The @source line is the only source of truth. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "../index.html";
 
 @import "./ds/tokens/fonts.css";
 @import "./ds/tokens/colors.css";
@@ -21,18 +25,17 @@
 @import "./ds/tokens/spacing.css";
 @import "./ds/tokens/borders.css";
 @import "./ds/tokens/halftone.css";
-@import "./ds/tokens/base.css";
-@import "./ds/tokens/neo.css";
-
-@import "./tailwind-theme.css";
-
-@source "../index.html";
+@import "./ds/tokens/base.css" layer(base);
+@import "./ds/tokens/neo.css" layer(components);
+@import "./ds/tailwind/theme.css";
+@import "./ds/tailwind/components.css";
+@import "./ds/tailwind/notx.css";
 
 /* down.blue runs on its own teal, --ink-down, which the design system defines
-   for all three themes (#018281 light, #0E7471 dark, under white text, amber in terminal) with
-   its --on-down partner. One rule picks it for every theme: it sits on
-   `:root, [data-theme]` after the imports, so it beats each theme block's
-   default project ink and resolves to that theme's value. */
+   for all three themes (#018281 light, #0E7471 dark, under white text, amber in
+   terminal) with its --on-down partner. One rule picks it for every theme: it
+   sits on `:root, [data-theme]` after the imports, so it beats each theme
+   block's default project ink and resolves to that theme's value. */
 :root,
 [data-theme] {
   --project-ink: var(--ink-down);

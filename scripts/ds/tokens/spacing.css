@@ -26,6 +26,8 @@
 --feed-row-y:14px;
 --box-pad:12px;
 --box-head-pad:7px 10px;
+/* the smallest touch target: control height, FAQ rows, coarse-pointer minimum */
+--target:44px;
 }
 @media (max-width:600px){
 :root{--page-pad-x:16px}
