@@ -24,62 +24,16 @@
   <link rel="stylesheet" href="assets/tailwind-4.3.3.css" />
   <link rel="manifest" href="manifest.webmanifest" />
   <style>
-    /* down.blue components, built on the joseli.to design system (v2, "retícula")
-       that scripts/tailwind-input.css compiles into the stylesheet above. Nothing
-       here invents a value: every colour, rule, gap and font is a token, and the
-       halftone shadow, press and lift mechanics come from the system's .cast /
-       .press / .lift classes in the markup. */
+    /* down.blue's own components. The family shell (page column, wordmark,
+       panels, buttons, fields, footer, support chips) comes from the design
+       system's tailwind/notx.css, compiled into the stylesheet above; this block
+       only holds what the downloader alone has. Nothing here invents a value:
+       every colour, rule, gap and font is a token, and the halftone shadow,
+       press and lift mechanics come from the system's .cast / .press / .lift
+       classes in the markup. */
 
-    /* The wordmark: the name in CMU Serif bold, the suffix an ink block tilted
-       +1.5deg like a sticker (.ink-block.tilt-cw). It runs past the top of the
-       type scale on purpose: this is a one-page tool and the masthead is the
-       only display type it has. */
-    .db-wordmark {
-      margin: var(--space-10) 0 var(--space-6);
-      font: var(--weight-display) clamp(var(--text-display-1), 13vw, 116px)/1.1 var(--font-display);
-      letter-spacing: var(--tracking-display);
-      color: var(--text-1);
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    /* Meta lines, tags and labels: typewriter, uppercase, tracked out. */
-    .db-meta { font: var(--type-meta); text-transform: uppercase; letter-spacing: var(--tracking-meta); color: var(--text-3); }
+    /* Tags and sub-labels: typewriter caps, tracked out. */
     .db-micro { font: var(--type-label); text-transform: uppercase; letter-spacing: var(--tracking-meta); }
-    /* Running machine output and fine print: typewriter, but readable. */
-    .db-note { font: var(--type-code); color: var(--text-3); }
-
-    /* Every box title — panel head, callout spine — is the same object: an ink
-       block in typewriter caps. The panel itself carries .cast. */
-    .db-panel { background: var(--surface-card); }
-    .db-panel-head {
-      display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
-      margin: 0; padding: var(--box-head-pad); border-bottom: var(--border);
-      background: var(--project-ink); color: var(--project-ink-contrast);
-      font: var(--weight-bold) var(--text-caption)/1.3 var(--font-mono);
-      letter-spacing: var(--tracking-meta); text-transform: uppercase;
-    }
-
-    /* Buttons carry only their type and colour; .cast.press in the markup does
-       the halftone shadow, the lift on hover and the slam on press. */
-    .db-btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
-      background: var(--surface-page); color: var(--text-1);
-      font: var(--weight-bold) var(--text-body-sm)/1.25 var(--font-body);
-      padding: 8px 12px; cursor: pointer; text-align: center; text-decoration: none;
-    }
-    a.db-btn, a.db-btn:visited, a.db-btn:hover { color: var(--text-1); background: var(--surface-page); text-decoration: none; }
-    .db-btn-primary, a.db-btn-primary, a.db-btn-primary:visited, a.db-btn-primary:hover {
-      background: var(--project-ink); border-color: var(--project-ink); color: var(--project-ink-contrast);
-    }
-    .db-btn-danger { background: var(--ink-red); border-color: var(--ink-red); color: var(--on-red); }
-    /* Disabled: no travel, no shadow (.press handles both), a sunken fill and
-       the second text colour. Never an opacity fade. */
-    .db-btn:disabled, .db-btn-primary:disabled, .db-btn-danger:disabled {
-      background: var(--surface-sunken); border-color: var(--border-strong); color: var(--text-2); cursor: not-allowed;
-    }
-    .db-btn-sm { padding: 4px 7px; font-size: var(--text-meta); }
-
 
     /* Picking a format is a step, not a toolbar, so it gets its own rule and
        title. None of the three is filled: a filled button here reads as "already
@@ -111,19 +65,6 @@
     .db-download-row .db-btn-mode { flex: 1; min-width: 0; }
     .db-btn-icon { flex: none; padding: 0 var(--space-4); }
     .db-filename { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; }
-
-    /* An <input> cannot carry the ::before/::after the halftone needs, so the
-       casting box is a wrapper and the input inside it is bare. Focus lands on
-       the wrapper, where the outline can sit outside the border. */
-    .db-field { display: flex; min-width: 0; background: var(--surface-page); }
-    .db-field:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
-    .db-input {
-      width: 100%; min-width: 0; border: 0; margin: 0; background: transparent; color: var(--text-1);
-      font: var(--type-compact); padding: 8px 10px;
-    }
-    .db-field .db-input:focus { outline: none; }
-    .db-input-flat { border: var(--border); background: var(--surface-page); }
-    .db-input::placeholder { color: var(--text-3); opacity: 1; }
 
     /* 0–50% download, 50–100% conversion. */
     .db-progress { border: var(--border); height: 18px; background: var(--surface-page); }
@@ -187,18 +128,6 @@
     .db-card:hover .db-thumb-btn::after, .db-card:focus-within .db-thumb-btn::after { opacity: 0; }
 
     .db-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
-
-    /* Support links: each takes a system ink with its on-* partner, so they
-       stay legible in all three themes. */
-    .db-chip {
-      display: inline-flex; align-items: center; padding: 5px 9px;
-      font: var(--type-label); text-transform: uppercase; letter-spacing: var(--tracking-meta); text-decoration: none;
-    }
-    a.db-chip-pix, a.db-chip-pix:visited, a.db-chip-pix:hover { background: var(--ink-pix); color: var(--on-pix); }
-    a.db-chip-mercadopago, a.db-chip-mercadopago:visited, a.db-chip-mercadopago:hover { background: #00B1EA; color: #000; }
-    a.db-chip-apoiase, a.db-chip-apoiase:visited, a.db-chip-apoiase:hover { background: var(--ink-orange); color: var(--on-orange); }
-    a.db-chip-coffee, a.db-chip-coffee:visited, a.db-chip-coffee:hover { background: var(--ink-yellow); color: var(--on-yellow); }
-    a.db-chip-sponsors, a.db-chip-sponsors:visited, a.db-chip-sponsors:hover { background: var(--ink-sponsors); color: var(--on-sponsors); }
   </style>
   <script>
     // The theme is manual: light unless this device picked dark or terminal,
@@ -215,51 +144,43 @@
 
 <body>
   <div id="app">
-    <div class="mx-auto max-w-[880px] px-6 pb-16">
+    <div class="notx-page">
       <div class="flex flex-wrap items-center justify-end gap-2 pt-4">
-        <button @click="toggleLang" :lang="lang === 'pt' ? 'en' : 'pt-BR'" class="db-btn db-btn-sm cast press">{{ lang === 'pt' ? 'english' : 'português' }}</button>
+        <button @click="toggleLang" :lang="lang === 'pt' ? 'en' : 'pt-BR'" class="notx-btn notx-btn-sm cast press">{{ lang === 'pt' ? 'english' : 'português' }}</button>
         <!-- One button cycles light -> dark -> terminal. Like the language
              toggle beside it, it names where a tap takes you: label and icon
              show the next theme; aria-label states both. -->
-        <button type="button" @click="cycleTheme" :aria-label="themeButtonLabel" class="db-btn db-btn-sm cast press">
-          <svg v-if="nextTheme === 'dark'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-            <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
-          </svg>
-          <svg v-else-if="nextTheme === 'terminal'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-            <path d="M12 19h8" /><path d="m4 17 6-6-6-6" />
-          </svg>
-          <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" />
-            <path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
-          </svg>
+        <button type="button" @click="cycleTheme" :aria-label="themeButtonLabel" :data-next-theme="nextTheme" class="notx-btn notx-btn-sm cast press theme-switch">
+          <svg class="icon icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></svg>
+          <svg class="icon icon-terminal" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M12 19h8" /><path d="m4 17 6-6-6-6" /></svg>
+          <svg class="icon icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
           <span>{{ t.themeNames[nextTheme] }}</span>
         </button>
       </div>
 
       <main>
-      <h1 class="db-wordmark">down<span class="ink-block tilt-cw">.blue</span></h1>
+      <h1 class="notx-wordmark">down<span class="ink-block tilt-cw">.blue</span></h1>
 
-      <section class="db-panel cast mt-15 mb-6">
-        <h2 class="db-panel-head">
+      <section class="cast notx-panel mt-15">
+        <h2 class="notx-panel-head">
           <span>{{ t.panelTitle }}</span>
         </h2>
         <div class="p-4">
-          <p class="mb-5" @click="toggleNetwork"><strong>{{ heroStrong }}</strong> {{ heroRest }}</p>
+          <p class="mt-0 mb-5" @click="toggleNetwork"><strong>{{ heroStrong }}</strong> {{ heroRest }}</p>
 
           <form @submit.prevent="findVideo" class="flex flex-wrap gap-2">
-            <span class="db-field cast min-w-0 flex-1">
-              <input ref="postUrlInput" v-model="postUrl" type="text" inputmode="url" autocomplete="off" class="db-input"
+            <span class="notx-field min-w-0 flex-1">
+              <input ref="postUrlInput" v-model="postUrl" type="text" inputmode="url" autocomplete="off" class="notx-input"
                 :aria-label="t.urlLabel" :placeholder="t.placeholder" required />
             </span>
             <button v-if="postUrl" type="button" @click="clearPostUrl" :disabled="loadingMode !== null"
-              class="db-btn shrink-0 px-3 cast press" :aria-label="t.clearBtn" :title="t.clearBtn">
+              class="notx-btn shrink-0 px-3 cast press" :aria-label="t.clearBtn" :title="t.clearBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
                 <path d="M18 6 6 18" /><path d="m6 6 12 12" />
               </svg>
             </button>
-            <button type="submit" :disabled="loadingMode !== null" class="db-btn db-btn-primary shrink-0 px-3 cast press"
+            <button type="submit" :disabled="loadingMode !== null" class="notx-btn notx-btn-primary shrink-0 px-3 cast press"
               :aria-label="t.findBtn" :title="t.findBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
@@ -268,23 +189,23 @@
             </button>
           </form>
 
-          <p class="db-note mt-4">{{ t.privacy }}</p>
+          <p class="notx-note mt-4">{{ t.privacy }}</p>
 
           <!-- Bluesky native video: the same video in three formats. fieldset so
                the grouping reaches assistive tech, not just the eye. -->
           <fieldset v-if="videoSource && videoSource.kind === 'bluesky-video' && !downloadReady" class="db-choice">
             <legend class="db-choice-title">{{ t.pickMode }}</legend>
-            <p class="db-note mb-4">{{ t.pickModeHint }}</p>
+            <p class="notx-note mb-4">{{ t.pickModeHint }}</p>
             <div class="grid gap-2 sm:grid-cols-3">
-              <button @click="downloadOriginalRaw" :disabled="loadingMode !== null" class="db-btn db-btn-mode cast press">
+              <button @click="downloadOriginalRaw" :disabled="loadingMode !== null" class="notx-btn db-btn-mode cast press">
                 <span class="db-mode-label">{{ t.btnRaw }}</span>
                 <span class="db-micro">{{ t.btnRawSub }}</span>
               </button>
-              <button @click="downloadOriginalAsMp4" :disabled="loadingMode !== null" class="db-btn db-btn-mode cast press">
+              <button @click="downloadOriginalAsMp4" :disabled="loadingMode !== null" class="notx-btn db-btn-mode cast press">
                 <span class="db-mode-label">{{ t.btnFullMp4 }}</span>
                 <span class="db-micro">{{ t.btnFullMp4Sub }}</span>
               </button>
-              <button @click="download720pMp4" :disabled="loadingMode !== null" class="db-btn db-btn-mode cast press">
+              <button @click="download720pMp4" :disabled="loadingMode !== null" class="notx-btn db-btn-mode cast press">
                 <span class="db-mode-label">{{ t.btn720 }}</span>
                 <span class="db-micro">{{ t.btn720Sub }}</span>
               </button>
@@ -294,14 +215,14 @@
           <!-- GIF: download options -->
           <div v-if="videoSource && videoSource.kind === 'gif' && !downloadReady" class="mt-4">
             <div v-if="videoSource.mp4Url" class="grid gap-2 sm:grid-cols-2">
-              <button @click="downloadGif(true)" :disabled="loadingMode !== null" class="db-btn db-btn-primary cast press">
+              <button @click="downloadGif(true)" :disabled="loadingMode !== null" class="notx-btn notx-btn-primary cast press">
                 {{ t.btnGifMp4 }}
               </button>
-              <button @click="downloadGif()" :disabled="loadingMode !== null" class="db-btn cast press">
+              <button @click="downloadGif()" :disabled="loadingMode !== null" class="notx-btn cast press">
                 {{ t.btnGif }}
               </button>
             </div>
-            <button v-else @click="downloadGif()" :disabled="loadingMode !== null" class="db-btn db-btn-primary w-full cast press">
+            <button v-else @click="downloadGif()" :disabled="loadingMode !== null" class="notx-btn notx-btn-primary w-full cast press">
               {{ t.btnGif }}
             </button>
           </div>
@@ -324,25 +245,25 @@
 
           <fieldset v-if="downloadReady && downloadLink && downloadName" class="db-choice">
             <legend class="db-choice-title">{{ t.downloadTitle }}</legend>
-            <p class="db-note mb-4">{{ downloadNote }}</p>
+            <p class="notx-note mb-4">{{ downloadNote }}</p>
             <button v-if="downloadFile" type="button" @click="shareDownloadFile"
-              class="db-btn db-btn-primary db-btn-mode w-full mb-4 cast press">
+              class="notx-btn notx-btn-primary db-btn-mode w-full mb-4 cast press">
               <span class="db-mode-label">{{ t.shareFile }}</span>
               <span class="db-micro">{{ t.shareFileSub }}</span>
             </button>
             <div class="db-download-row">
-              <button type="button" @click="backToFormats" class="db-btn db-btn-icon cast press" :aria-label="t.back" :title="t.back">
+              <button type="button" @click="backToFormats" class="notx-btn db-btn-icon cast press" :aria-label="t.back" :title="t.back">
                 <!-- lucide-static 0.542.0: arrow-left, link, share-2 -->
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
                   <path d="m12 19-7-7 7-7" /><path d="M19 12H5" />
                 </svg>
               </button>
-              <a :href="downloadLink" :download="downloadName" class="db-btn db-btn-mode cast press">
+              <a :href="downloadLink" :download="downloadName" class="notx-btn db-btn-mode cast press">
                 <span class="db-mode-label">{{ isIos ? t.saveFileIos : t.saveFile }}</span>
                 <span class="db-micro db-filename">{{ downloadName }}</span>
               </a>
-              <button type="button" @click="copyShareLink" :disabled="shareBusy" class="db-btn db-btn-icon cast press"
+              <button type="button" @click="copyShareLink" :disabled="shareBusy" class="notx-btn db-btn-icon cast press"
                 :aria-label="t.copyShareLink" :title="t.copyShareLink">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
@@ -351,7 +272,7 @@
                 </svg>
               </button>
               <button v-if="webShareAvailable" type="button" @click="shareDownloadLink" :disabled="shareBusy"
-                class="db-btn db-btn-icon cast press" :aria-label="t.shareLink" :title="t.shareLink">
+                class="notx-btn db-btn-icon cast press" :aria-label="t.shareLink" :title="t.shareLink">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
                   <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
@@ -365,7 +286,7 @@
           </fieldset>
 
           <!-- Subtitle download (after HLS path) -->
-          <a v-if="subtitleUrl" :href="subtitleUrl" class="db-btn mt-2 w-full cast press"
+          <a v-if="subtitleUrl" :href="subtitleUrl" class="notx-btn mt-2 w-full cast press"
             :download="`${subtitleLang}.vtt`">{{ t.subtitlesPrefix }} ({{ subtitleLang }}.vtt)</a>
 
           <!-- Video Preview -->
@@ -400,15 +321,17 @@
       </aside>
 
       <!-- History -->
-      <section class="db-panel cast mb-6" v-if="urlHistory.length > 0">
-        <h2 class="db-panel-head">
+      <section class="cast notx-panel" v-if="urlHistory.length > 0">
+        <h2 class="notx-panel-head">
           <span>{{ t.historyTitle }}</span>
           <span>{{ filteredHistory.length }}/{{ urlHistory.length }}</span>
         </h2>
         <div class="border-b border-hairline p-3">
-          <input v-model="historyQuery" type="search" :aria-label="t.searchHistory" :placeholder="t.searchHistory" class="db-input db-input-flat" />
+          <span class="notx-field">
+            <input v-model="historyQuery" type="search" :aria-label="t.searchHistory" :placeholder="t.searchHistory" class="notx-input" />
+          </span>
         </div>
-        <p v-if="filteredHistory.length === 0" class="db-meta p-9 text-center">{{ t.noResults }}</p>
+        <p v-if="filteredHistory.length === 0" class="notx-meta p-9 text-center">{{ t.noResults }}</p>
         <div class="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 lg:grid-cols-3">
           <article v-for="(item, index) in paginatedHistory" :key="getHistoryItemUrl(item) || index"
             class="db-card cast cast-flat lift flex min-w-0 flex-col">
@@ -423,21 +346,21 @@
                 :style="thumbnailPlaceholderStyle(getHistoryItemData(item).postId)"></span>
             </button>
             <div class="flex min-w-0 flex-1 flex-col gap-2 p-2">
-              <p class="db-meta truncate text-text-1">@{{ getHistoryItemData(item).username }}</p>
+              <p class="notx-meta truncate text-text-1">@{{ getHistoryItemData(item).username }}</p>
               <p v-if="getHistoryItemData(item).text" class="db-clamp-3 text-body-sm text-text-2">
                 {{ getHistoryItemData(item).text }}
               </p>
               <div class="mt-auto flex items-center justify-between gap-2 border-t border-hairline pt-2">
                 <a :href="normalizedHistoryUrl(item)" class="db-micro truncate" target="_blank" rel="noopener">{{ t.viewPost }}</a>
                 <div class="flex shrink-0 gap-1">
-                  <button @click="fillAndFind(item)" :title="t.reopen" :aria-label="t.reopen" :disabled="loadingMode !== null" class="db-btn db-btn-sm cast press">
+                  <button @click="fillAndFind(item)" :title="t.reopen" :aria-label="t.reopen" :disabled="loadingMode !== null" class="notx-btn notx-btn-sm cast press">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                       stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
                       <path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" />
                     </svg>
                   </button>
                   <button @click="removeFromHistory(getHistoryItemUrl(item))" :title="t.removeHistory"
-                    :aria-label="t.removeHistory" class="db-btn db-btn-sm db-btn-danger cast press">
+                    :aria-label="t.removeHistory" class="notx-btn notx-btn-sm notx-btn-danger cast press">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                       stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
                       <path d="M18 6 6 18" /><path d="m6 6 12 12" />
@@ -449,7 +372,7 @@
           </article>
         </div>
         <div v-if="hasMoreHistory" class="border-t border-hairline p-3 text-center">
-          <button @click="loadMoreHistory" class="db-btn cast press">{{ t.showMore }}</button>
+          <button @click="loadMoreHistory" class="notx-btn cast press">{{ t.showMore }}</button>
         </div>
       </section>
 
@@ -469,8 +392,8 @@
       </aside>
       </main>
 
-      <footer class="pt-6">
-        <p class="db-meta mb-6 text-center">
+      <footer class="notx-footer">
+        <p class="notx-meta text-center">
           {{ t.tagline }} ·
           <a :href="t.bugFormUrl" target="_blank" rel="noopener">{{ t.foundBug }}</a> ·
           {{ t.partOf }} <a href="https://notx.blue">notx.blue</a> {{ t.byAuthor }}
@@ -479,18 +402,18 @@
           <a href="https://notx.blue/privacy">{{ t.privacyLink }}</a>
         </p>
 
-        <p class="db-note mb-6 text-center">{{ t.fromBrazil }}</p>
-        <div class="mb-6 flex flex-wrap items-center justify-center gap-2">
+        <p class="notx-note text-center">{{ t.fromBrazil }}</p>
+        <div class="flex flex-wrap items-center justify-center gap-2">
           <span class="db-micro mr-1 text-text-3">{{ t.support }}</span>
-          <a href="https://pix.joseli.to" target="_blank" rel="noopener" class="db-chip db-chip-pix cast press">Pix</a>
-          <a href="https://link.mercadopago.com.br/breakzplatform" target="_blank" rel="noopener" class="db-chip db-chip-mercadopago cast press">Mercado Pago</a>
-          <a href="https://buymeacoffee.com/joselito" target="_blank" rel="noopener" class="db-chip db-chip-coffee cast press">Buy Me a Coffee</a>
-          <a href="https://github.com/sponsors/breakzplatform" target="_blank" rel="noopener" class="db-chip db-chip-sponsors cast press">GitHub Sponsors</a>
+          <a href="https://pix.joseli.to" target="_blank" rel="noopener" class="notx-chip bg-ink-pix text-on-pix cast press">Pix</a>
+          <a href="https://link.mercadopago.com.br/breakzplatform" target="_blank" rel="noopener" class="notx-chip bg-ink-mercadopago text-on-mercadopago cast press">Mercado Pago</a>
+          <a href="https://buymeacoffee.com/joselito" target="_blank" rel="noopener" class="notx-chip bg-ink-yellow text-on-yellow cast press">Buy Me a Coffee</a>
+          <a href="https://github.com/sponsors/breakzplatform" target="_blank" rel="noopener" class="notx-chip bg-ink-sponsors text-on-sponsors cast press">GitHub Sponsors</a>
           <!-- Temporarily hidden support link
-          <a href="https://apoia.se/joselito" target="_blank" rel="noopener" class="db-chip db-chip-apoiase cast press">APOIA.se</a>
+          <a href="https://apoia.se/joselito" target="_blank" rel="noopener" class="notx-chip bg-ink-orange text-on-orange cast press">APOIA.se</a>
           -->
         </div>
-        <p class="db-note text-center">{{ t.respect }}</p>
+        <p class="notx-note text-center">{{ t.respect }}</p>
       </footer>
     </div>
   </div>
