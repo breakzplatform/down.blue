@@ -393,27 +393,28 @@
       </main>
 
       <footer class="notx-footer">
-        <p class="notx-meta text-center">
-          {{ t.tagline }} ·
-          <a :href="t.bugFormUrl" target="_blank" rel="noopener">{{ t.foundBug }}</a> ·
-          {{ t.partOf }} <a href="https://notx.blue">notx.blue</a> {{ t.byAuthor }}
-          <a href="https://bsky.app/profile/joseli.to">@joseli.to</a> ·
-          <a href="https://github.com/breakzplatform/down.blue">{{ t.viewSource }}</a> ·
-          <a href="https://notx.blue/privacy">{{ t.privacyLink }}</a>
+        <p class="notx-meta notx-foot">
+          <span>{{ t.tagline }}</span>
+          <span><a :href="t.bugFormUrl" target="_blank" rel="noopener">{{ t.foundBug }}</a></span>
+          <span>{{ t.partOf }} <a href="https://notx.blue">notx.blue</a> {{ t.byAuthor }} <a href="https://bsky.app/profile/joseli.to">@joseli.to</a></span>
         </p>
-
-        <p class="notx-note text-center">{{ t.fromBrazil }}</p>
+        <p class="notx-note text-center">{{ t.fromBrazil }} {{ t.respect }}</p>
         <div class="flex flex-wrap items-center justify-center gap-2">
-          <span class="db-micro mr-1 text-text-3">{{ t.support }}</span>
-          <a href="https://pix.joseli.to" target="_blank" rel="noopener" class="notx-chip bg-ink-pix text-on-pix cast press">Pix</a>
-          <a href="https://link.mercadopago.com.br/breakzplatform" target="_blank" rel="noopener" class="notx-chip bg-ink-mercadopago text-on-mercadopago cast press">Mercado Pago</a>
-          <a href="https://buymeacoffee.com/joselito" target="_blank" rel="noopener" class="notx-chip bg-ink-yellow text-on-yellow cast press">Buy Me a Coffee</a>
-          <a href="https://github.com/sponsors/breakzplatform" target="_blank" rel="noopener" class="notx-chip bg-ink-sponsors text-on-sponsors cast press">GitHub Sponsors</a>
+          <span class="notx-meta">{{ t.support }}</span>
+          <a href="https://pix.joseli.to" target="_blank" rel="noopener" class="notx-chip cast press bg-ink-pix text-on-pix">Pix</a>
+          <a href="https://link.mercadopago.com.br/breakzplatform" target="_blank" rel="noopener" class="notx-chip cast press bg-ink-mercadopago text-on-mercadopago">Mercado Pago</a>
+          <a href="https://buymeacoffee.com/joselito" target="_blank" rel="noopener" class="notx-chip cast press bg-ink-yellow text-on-yellow">Buy Me a Coffee</a>
+          <a href="https://github.com/sponsors/breakzplatform" target="_blank" rel="noopener" class="notx-chip cast press bg-ink-sponsors text-on-sponsors">GitHub Sponsors</a>
           <!-- Temporarily hidden support link
-          <a href="https://apoia.se/joselito" target="_blank" rel="noopener" class="notx-chip bg-ink-orange text-on-orange cast press">APOIA.se</a>
+          <a href="https://apoia.se/joselito" target="_blank" rel="noopener" class="notx-chip cast press bg-ink-orange text-on-orange">APOIA.se</a>
           -->
         </div>
-        <p class="notx-note text-center">{{ t.respect }}</p>
+        <p class="notx-meta notx-foot">
+          <span><a href="https://github.com/breakzplatform/down.blue">{{ t.viewSource }}</a></span>
+          <span><a href="https://notx.blue/privacy">{{ t.privacyLink }}</a></span>
+          <span><a href="https://status.joseli.to/" target="_blank" rel="noopener">status</a></span>
+          <span><a href="mailto:abuse@notx.blue">abuse@notx.blue</a></span>
+        </p>
       </footer>
     </div>
   </div>
